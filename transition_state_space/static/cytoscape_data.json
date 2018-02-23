@@ -1,0 +1,139 @@
+[{
+  "data": {"id": "n1", "weight": 23, "width":50, "height":30},
+  "position": {"x": 50, "y": 45},
+  "group": "nodes",
+  "removed": false,
+  "selected": false,
+  "selectable": true,
+  "locked": true,
+  "grabbable": false,
+  "classes": ""
+}, {
+  "data": {"id": "n2", "weight": 60, "width":50, "height":30},
+  "position": {"x": 450, "y": 45},
+  "group": "nodes",
+  "removed": false,
+  "selected": false,
+  "selectable": true,
+  "locked": true,
+  "grabbable": false,
+  "classes": ""
+}, {
+  "data": {"id": "n3", "weight": 47, "width":50, "height":30},
+  "position": {"x": 50, "y": 225},
+  "group": "nodes",
+  "removed": false,
+  "selected": false,
+  "selectable": true,
+  "locked": true,
+  "grabbable": false,
+  "classes": ""
+}, {
+  "data": {
+    "id": "n4",
+    "weight": 3, "width":50, "height":30
+  },
+  "position": {
+    "x": 450,
+    "y": 225
+  },
+  "group": "nodes",
+  "removed": false,
+  "selected": false,
+  "selectable": true,
+  "locked": true,
+  "grabbable": false,
+  "classes": ""
+}, {
+  "data": {
+    "id": "n5",
+    "weight": 68, "width":50, "height":30
+  },
+  "position": {
+    "x": 50,
+    "y": 405
+  },
+  "group": "nodes",
+  "removed": false,
+  "selected": false,
+  "selectable": true,
+  "locked": true,
+  "grabbable": false,
+  "classes": ""
+}, {
+  "data": {
+    "id": "n6",
+    "weight": 54, "width":50, "height":30
+  },
+  "position": {
+    "x": 450,
+    "y": 405
+  },
+  "group": "nodes",
+  "removed": false,
+  "selected": false,
+  "selectable": true,
+  "locked": true,
+  "grabbable": false,
+  "classes": ""
+}, {
+  "data": {
+    "id": "e1",
+    "weight": 19,
+    "source": "n1",
+    "target": "n2"
+  },
+  "position": {},
+  "group": "edges",
+  "removed": false,
+  "selected": false,
+  "selectable": true,
+  "locked": true,
+  "grabbable": false,
+  "classes": ""
+}, {
+  "data": {
+    "id": "e2",
+    "weight": 31,
+    "source": "n2",
+    "target": "n4"
+  },
+  "position": {},
+  "group": "edges",
+  "removed": false,
+  "selected": false,
+  "selectable": true,
+  "locked": true,
+  "grabbable": false,
+  "classes": ""
+}, {
+  "data": {
+    "id": "e3",
+    "weight": 90,
+    "source": "n4",
+    "target": "n3"
+  },
+  "position": {},
+  "group": "edges",
+  "removed": false,
+  "selected": false,
+  "selectable": true,
+  "locked": true,
+  "grabbable": false,
+  "classes": ""
+}, {
+  "data": {
+    "id": "e4",
+    "weight": 36,
+    "source": "n4",
+    "target": "n6"
+  },
+  "position": {},
+  "group": "edges",
+  "removed": false,
+  "selected": false,
+  "selectable": true,
+  "locked": true,
+  "grabbable": false,
+  "classes": ""
+}]

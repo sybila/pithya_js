@@ -1,0 +1,35 @@
+int decisions[num_of_particles]       // code: 0 = up, 1 = right, 2 = down, 3 = left, 4 = sink
+float decision_point[num_of_particles]  // based on direction just one coordinate of point is needed
+int directions[num_of_particles]      // current direction: 0 = up, 1 = right, 2 = down, 3 = left
+
+
+int after_each_step(pos, newPos, particleIndex) {
+  for someThr in thresholds   // someThr may be in X or Y direction and thus, just coincident position component is investigated
+    if (newPos == someThr) || (pos > someThr && newPos < someThr) || (pos < someThr && newPos > someThr)
+      generate_decision_point(newPos, directions[particleIdx], someThr, particleIdx)
+  
+  if directions[particleIdx] modulo 2 == 0 && ((newPos.y == decision_point[particleIdx]) || (pos.y > decision_point[particleIdx] && newPos.y < decision_point[particleIdx]) ||
+       (pos.y < decision_point[particleIdx] && newPos.y > decision_point[particleIdx])) ||
+     directions[particleIdx] modulo 2 == 1 && ((newPos.x == decision_point[particleIdx]) || (pos.x > decision_point[particleIdx] && newPos.x < decision_point[particleIdx]) ||
+       (pos.x < decision_point[particleIdx] && newPos.x > decision_point[particleIdx]))
+    return change_of_direction()
+  else
+    return directions[particleIdx]
+}
+
+
+void generate_decision_point(np, dir, thr, idx) {
+  State state = match_state(thr, dir)
+  decisions[idx] = decide(state)
+  decision_point[idx] = magic(state, dir, decisions[idx])
+}
+
+
+int decide(state) {
+  // compute direction code of randomly selected successor
+}
+
+float magic(state, dir, decision) {
+  // compute point of decision based on current direction and topology of current state
+  // 1) for start could be a random point between borders of the state in particular direction
+}

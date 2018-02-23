@@ -1,0 +1,114 @@
+<%!
+  import os
+  import glob
+  import re
+  from itertools import chain
+  from routes import url_for
+
+  prefix = url_for("/")
+  path = os.getcwd()
+  
+%>
+<%
+  app_root = "config/plugins/visualizations/"+visualization_name+"/"
+  
+  data = list(hda.datatype.dataprovider(
+    hda, 
+    'line', 
+    strip_lines=True, 
+    strip_newlines=True ))
+  data_text = "\\n".join(data)
+  
+%>
+<html lan"en">
+  
+  <head>
+    <title>TSS - Transition State Space</title>
+  
+    <script type="text/javascript" src="static/vis/dist/vis.js"></script>
+    <link href="static/vis/dist/vis-network.min.css" rel="stylesheet" type="text/css" />
+    <!--link href="static/vis/dist/vis.css" rel="stylesheet" type="text/css" /-->
+  </head>
+  
+  <style>
+    body {
+        overflow: hidden;
+    }
+    #mynetwork {
+        margin: 0;
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+    }
+</style>
+  
+  <body>
+  
+  <div id="mynetwork"></div>
+  
+  <script type="text/javascript">
+    // create an array with nodes
+    var nodes = [
+      {id: 1, font:{size:30},x: 1, y: 1.5, label: '1'},
+      {id: 2, font:{size:30},x: 2.5, y: 1.5, label: '2'},
+      {id: 3, font:{size:30},x: 4, y: 1.5, label: '3'},
+      {id: 4, font:{size:30},x: 1, y: 3.5, label: '4'},
+      {id: 5, font:{size:30},x: 2.5, y: 3.5, label: '5'},
+      {id: 6, font:{size:30},x: 4, y: 3.5, label: '6'},
+      {id: 7, x: 1, y: 4.5, label: '7'},
+      {id: 8, x: 2.5, y: 4.5, label: '8'},
+      {id: 9, x: 4, y: 4.5, label: '9'},
+    ];
+  
+    // create an array with edges
+    var edges = [
+      {from: 1, to: 2},
+      {from: 2, to: 3},
+      {from: 3, to: 6},
+      {from: 6, to: 9},
+      {from: 9, to: 8},
+      {from: 8, to: 7},
+      {from: 7, to: 4},
+      {from: 4, to: 5},
+      {from: 4, to: 1},
+      {from: 5, to: 8},
+    ];
+  
+    // create a network
+    var container = document.getElementById('mynetwork');
+    var data= {
+      nodes: nodes,
+      edges: edges,
+    };
+    var options = {
+      interaction: {
+        dragNodes: false,
+      },
+      nodes: {
+        shape: 'box',
+        value: 2,
+        scaling: {
+          label: false,
+          min: 1,
+          max: 100,
+        },
+        shapeProperties: {
+          borderRadius: 0,
+        },
+      },
+      edges: {
+        arrows: 'to',
+        color: 'red',
+        width: 2,
+      },
+    };
+    var network = new vis.Network(container, data, options);
+  </script>
+  
+  </body>
+
+</html>

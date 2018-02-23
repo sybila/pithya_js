@@ -1,0 +1,5 @@
+HOW TO INSTALL fieldplay:
+go to fieldplay root directory (here it is in: /home/galaxy/galaxy/config/plugins/visualizations/vector_field/static/fieldplay)
+run command:  npm install
+then run:     npm run-script build
+move files:   mv dist/js ../

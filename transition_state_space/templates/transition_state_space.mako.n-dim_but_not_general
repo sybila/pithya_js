@@ -1,0 +1,1097 @@
+<%!
+  import os
+  import glob
+  import re
+  from itertools import chain
+  from routes import url_for
+
+  prefix = url_for("/")
+  path = os.getcwd()
+  
+  def replace_consts(text, l):
+    if l is None: return text
+    for i in l:
+      text = re.sub(r"(?<![A-Za-z0-9_])"+i[0]+"(?![A-Za-z0-9_])", i[1], text)
+    return text
+    
+  def replace_params(text, l):
+    if l is None: return text
+    for i in l:
+      text = re.sub(r"(?<![A-Za-z0-9_])"+i[0]+"(?![A-Za-z0-9_])", "params['"+i[0]+"']", text)
+    return text
+    
+  def replace_vars(text, l):
+    if l is None: return text
+    for i, v in enumerate(l):
+      text = re.sub(r"(?<![A-Za-z0-9_])"+v+"(?![A-Za-z0-9_])", "vars['"+v+"']", text)
+    return text
+    
+  def repair_approx(text):
+    return re.sub(r'(Approx\([^)]+)\)\(([^)]+)(\))', '\\1,[\\2]\\3', text)
+%>
+<%
+  app_root = "config/plugins/visualizations/"+visualization_name+"/"
+  
+  ## list of string lines of input bio file
+  data = list(hda.datatype.dataprovider(
+    hda, 
+    'line', 
+    strip_lines=True, 
+    strip_newlines=True ))
+    
+  ## all lines joined into one structured string (keeping all newlines)
+  data_text = "\\n".join(data)
+  
+  ## path to Approximation tool written in Java
+  approx_path = '/home/shiny/pithya-gui/core/bin/pithyaApproximation'
+  ## unique name of resulting output file (should be unique for every file from personal history)
+  output_data = '/tmp/'+hda.name+".hid_"+str(hda.id)+".id_"+str(hda.hid)+".approx.bio"
+  ## if this input were approximated before and the output is still in tmp the approximation will be skipped
+  if not os.path.isfile(output_data):
+    print("## Approximation needed !!!")
+    cmd = "echo '{}' | {} > {}".format(data_text,approx_path,output_data)
+    os.system( cmd )
+  with open(output_data) as f: approx_data = [line.rstrip('\n') for line in f]
+    
+  ## parssing of bio file format to python structures (later used in JS)
+  vars =   [k for k in approx_data if re.match('^VARS:',k)]
+  vars =   vars[0].replace(" ","").replace("VARS:",'').rstrip(";").split(",") if len(vars) == 1 else None
+  consts = [k for k in approx_data if re.match('^CONSTS:',k)]
+  consts = chain(*[k.replace(" ","").replace("CONSTS:",'').rstrip(";").split(";") for k in consts]) if len(consts) > 0 else None
+  consts = [k.split(',') for k in consts] if consts else None
+  params = [k for k in approx_data if re.match('^PARAMS:',k)]
+  params = chain(*[k.replace(" ","").replace("PARAMS:",'').rstrip(";").split(";") for k in params]) if len(params) > 0 else None
+  params = [k.split(',') for k in params] if params else None
+  eqs =    [k.replace(' ','').replace("EQ:","").rstrip(";") for k in approx_data if re.match('^EQ:',k)]
+  eqs =    [repair_approx(k) for k in eqs] if eqs else None
+  eqs =    [replace_consts(k, consts) for k in eqs] if eqs else None
+  eqs =    [replace_params(k, params) for k in eqs] if eqs else None
+  eqs =    ["function(vars,params){return "+(replace_vars(k, vars).split('=')[1])+";}" for k in eqs] if eqs else None
+  thrs =   [k.replace(' ','').replace("THRES:","").rstrip(";") for k in approx_data if re.match('^THRES:',k)]
+  thrs =   {k.split(':')[0] : k.split(':')[1].split(',') for k in thrs} if thrs else None
+  
+  ## Approx function from R pithya-gui
+  # Approx <- function(var, ramps) {	
+  # 	var <- as.array(var)	#coerect
+  # 	apply(var, 1:length(dim(var)), function(s) {
+  # 		if(s <= ramps[[1]][1]) return(ramps[[1]][2])
+  #         if(s >= ramps[[length(ramps)]][1]) return(ramps[[length(ramps)]][2])
+  #         for(i in 2:length(ramps)) {
+  #             a <- ramps[[i-1]]
+  #             b <- ramps[[i]]
+  #             if(s >= a[1] && s <= b[1]) return(a[2]+(s-a[1])/(b[1]-a[1])*(b[2]-a[2]))
+  #         }
+  # 	})
+  # }
+  
+%>
+<html lan"en">
+  
+  <head>
+    <title>TSS - Transition State Space</title>
+  	<script src="https://d3js.org/d3.v4.js" charset="utf-8"></script>
+  	<script type="text/javascript" charset="utf-8">
+      // definition of functions used in bio files so there is no need to transorm them 
+      function Hillm(x,t,n,b,a) {
+        return a+(b-a)*(Math.pow(t,n)/(Math.pow(x,n)+Math.pow(t,n)));
+      };
+      hillm = Hillm;
+      function Hillp(x,t,n,a,b) {
+        return a+(b-a)*(Math.pow(x,n)/(Math.pow(x,n)+Math.pow(t,n)));
+      };
+      hillp = Hillp;
+      function Approx(s,ramps) {
+        if(s <= ramps[0][0]) return(ramps[0][1])
+        if(s >= ramps[ramps.length-1][0]) return(ramps[ramps.length-1][1])
+        for(var i = 1;  i < ramps.length; i++) {
+          a = ramps[i-1]
+          b = ramps[i]
+          if(s >= a[0] && s <= b[0]) return(a[1]+(s-a[0])/(b[0]-a[0])*(b[1]-a[1]))
+        }
+      }
+      
+      // dynamicly (in mako style) fills dictionary with equations parsed from bio file for using in JS code
+      functions = {
+      % for ind,eq in enumerate(eqs):
+        '${vars[ind]}':${eq|n},
+      % endfor
+      };
+      // creates one structure containing all important from bio file for JS code
+      window.bio = {'thrs': ${thrs}, 'vars': ${vars}, 'eqs': functions, 'params': ${params}};
+      //console.log(window.bio.thrs);
+      
+      Set.prototype.difference = function(setB) {
+          var difference = new Set(this);
+          for (var elem of setB) {
+              difference.delete(elem);
+          }
+          return difference;
+      };
+      d3.selection.prototype.moveUp = function() {
+          return this.each(function() {
+              this.parentNode.appendChild(this);
+          });
+      };
+      function parsing_to_string(x) {
+        if(Object.values(x).length > 0) {
+          var result = Number.parseFloat(Object.values(x)[0]).toFixed(2).toString();
+          for(var i = 1; i < Object.values(x).length; i++) {
+            result += " "+Number.parseFloat(Object.values(x)[i]).toFixed(2).toString();
+          }
+          return result;
+        } else return "";
+      };
+    </script>
+  
+    <!--meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1"-->
+    <style>
+      body {
+        background-color: white;
+        margin: 0;
+        font-family: sans-serif;
+        font-size: 18px;
+      }
+      #cont {
+        pointer-events: all;
+      }
+      #zoomObject {
+      }
+      .loop {
+        vector-effect: non-scaling-stroke; 
+      }
+      .transition { 
+        vector-effect: non-scaling-stroke; 
+      }
+      .states {
+      }
+      .axis {
+        font-size: 15px;
+      }
+      .widget_panel {
+        position: absolute;
+        //top: 10px;
+        left: 560px;
+        //display: flex;
+        //flex-direction: column;
+        height: 100%;
+        width: 230px;
+        
+      }
+      #resetZoomBtn {
+        position: absolute;
+        top: 10px;
+      }
+      #resetReachBtn {
+        position: absolute;
+        top: 40px;
+      }
+      #infoPanel {
+        position: absolute;
+        top: 70px;
+        flex-grow: 1;
+      }
+      #x_axis_div {
+        position: absolute;
+        top: 160px;
+        width: 90px;
+      }
+      #y_axis_div {
+        position: absolute;
+        top: 160px;
+        width: 90px;
+        left: 100px;
+      }
+      .slidecontainer {
+        position: absolute;
+        top: 200px;
+      }
+    </style>
+    
+  </head>
+  
+  <body>
+    <div class="widget_panel">
+      <button id="resetZoomBtn">Unzoom</button>
+      <button id="resetReachBtn">Deselect</button>
+      <textarea id="infoPanel" rows="${len(vars)+1}" cols="35" wrap="off" disabled></textarea>
+      <!-- dynamicly adds sliders with labels for parameters and variables (if more than 2 vars are present) in mako style -->
+      <div id="x_axis_div">
+        X axis<br>
+        <select name="xAxis" id="x_axis" style="width:90px" required>
+          % for val in vars:
+            % if val == vars[0]:
+              <option value="${val}" selected>${val}</option>
+            % else:
+              <option value="${val}">${val}</option>
+            % endif
+          % endfor
+        </select>
+      </div>
+      <div id="y_axis_div">
+        Y axis<br>
+        <select name="yAxis" id="y_axis" style="width:90px" required>
+          % for val in vars:
+            % if len(vars) > 1 and val == vars[1]:
+              <option value="${val}" selected>${val}</option>
+            % else:
+              <option value="${val}">${val}</option>
+            % endif
+          % endfor
+        </select>
+      </div>
+      % if len(vars) > 2 or len(params) > 0:
+        <div class="slidecontainer">
+        % if len(vars) > 2:
+        <hr>
+        % for val in vars:
+          <% 
+          min_val  = min(map(float,thrs[val]))
+          max_val  = max(map(float,thrs[val]))
+          step_val = abs(max_val-min_val)*0.01
+          %>
+          % if val == vars[0] or val == vars[1]:
+          <div id="slider_${val}_wrapper" hidden>
+          % else:
+          <div id="slider_${val}_wrapper">
+          % endif
+            var. ${val}: <span id="text_${val}"></span><br>
+            <input type="range" min=${min_val} max=${max_val} value=${min_val} step=${step_val} class="slider" id="slider_${val}">
+          </div>
+        % endfor
+        % endif
+        % if len(params) > 0:
+        <hr>
+        % for val in params:
+          <% 
+          min_val  = float(val[1])
+          max_val  = float(val[2])
+          step_val = abs(max_val-min_val)*0.01
+          %>
+          par. ${val[0]}: <span id="text_${val[0]}"></span><br>
+          <input type="range" min=${min_val} max=${max_val} value=${min_val} step=${step_val} class="slider" id="slider_${val[0]}"><br>
+        % endfor
+        % endif
+        </div>
+      % endif
+    </div>
+    
+    <script type="text/javascript" charset="utf-8">
+   
+var xDim = document.getElementById("x_axis").value,
+    yDim = document.getElementById("y_axis").value,
+    thrs = window.bio.thrs,
+    params = {},
+    multiarr = [],
+    combins = [],
+    // TODO: following should be connected to particular slider (or some input element) as it's in Pithya
+    color_style = "both",
+    color_thr = "0.05";
+
+// initial values according to the sliders setting
+window.bio.params.map(x => params[x[0]] = x[1]);
+
+// iteratively adds event listener for varaible sliders (according to index)
+% if len(vars) > 2:
+  % for val in vars:
+      (function(i) {
+          d3.select("#text_"+i).html(d3.select("#slider_"+i).property("value"));
+          d3.select("#slider_"+i).on("input", function() {
+              d3.select("#text_"+i).html(this.value);
+              
+              var new_multiarr = generateVertices(thrs, xDim, yDim);
+              if(new_multiarr.toString() != multiarr.toString()) {
+                multiarr = new_multiarr;
+                combins = getCombitations(multiarr);   //there is very unlikely chance of confusion
+              }
+              compute_tss();
+              transform_tss();
+              draw();
+              zoomed();
+              if(reach_start !== null) handleMouseClick(null,reach_start);
+          })
+      })('${val}');
+  % endfor
+% endif
+
+// iteratively adds event listener for parameter sliders (according to index)
+% if len(params) > 0:
+  % for val in params:
+      (function(i) {
+          d3.select("#text_"+i[0]).html(d3.select("#slider_"+i[0]).property("value"));
+          d3.select("#slider_"+i[0]).on("input", function() {
+              d3.select("#text_"+i[0]).html(this.value);
+              // fill parameters with current values
+              params[i[0]] = Number(d3.select("#slider_"+i[0]).property("value")); // according to slider for parameters
+              compute_tss();
+              transform_tss();
+              draw();
+              zoomed();
+              if(reach_start !== null) handleMouseClick(null,reach_start);
+          })
+      })(${val});
+  % endfor
+% endif
+
+// event listener for change of selectected dimension for X axis
+d3.select("#x_axis").on("change", function() {
+  var other = d3.select("#y_axis").property("value");
+  if(this.value == other) {
+    d3.select("#y_axis").property('value',xDim);
+    yDim = xDim;
+  } else {
+    d3.select("#slider_"+xDim+"_wrapper").attr("hidden",null);
+  }
+  xDim = this.value;
+  d3.select("#slider_"+this.value+"_wrapper").attr("hidden","hidden");
+  
+  var new_multiarr = generateVertices(thrs, xDim, yDim);
+  if(new_multiarr.toString() != multiarr.toString()) {
+    multiarr = new_multiarr;
+    combins = getCombitations(multiarr);   //there is very unlikely chance of confusion
+  }
+  compute_tss();
+  transform_tss();
+  draw();
+  resettedZoom();
+  if(reach_start !== null) handleMouseClick(null,reach_start);
+});
+
+// event listener for change of selectected dimension for Y axis
+d3.select("#y_axis").on("change", function() {
+  var other = d3.select("#x_axis").property("value");
+  if(this.value == other) {
+    d3.select("#x_axis").property('value',yDim);
+    xDim = yDim;
+  } else {
+    d3.select("#slider_"+yDim+"_wrapper").attr("hidden",null);
+  }
+  yDim = this.value;
+  d3.select("#slider_"+this.value+"_wrapper").attr("hidden","hidden");
+  
+  var new_multiarr = generateVertices(thrs, xDim, yDim);
+  if(new_multiarr.toString() != multiarr.toString()) {
+    multiarr = new_multiarr;
+    combins = getCombitations(multiarr);   //there is very unlikely chance of confusion
+  }
+  compute_tss();
+  transform_tss();
+  draw();
+  resettedZoom();
+  if(reach_start !== null) handleMouseClick(null,reach_start);
+});
+
+d3.select('#resetReachBtn')
+    .on("click", resettedReach);
+
+d3.select('#resetZoomBtn')
+    .on("click", resettedZoom);
+    
+//###################################################    
+
+var width = 550,
+    height = 550,
+    margin = { top: 10, right: 10, bottom: 50, left: 50 },
+    arrowlen = 7,
+    color = "transparent",
+    reachColor = "rgba(65, 105, 225, 0.6)", // "royalblue"
+    neutral_col = "black",
+    positive_col = "darkgreen",
+    negative_col = "red",
+    normalStrokeWidth = 1,
+    hoverStrokeWidth = 4,
+    transWidth = 2,
+    selfloopWidth = 4,
+    reach_start = null;
+    statedata = [],
+    transdata = [],
+    trans = {},
+    trans_dir = {},
+    zoomScale = 1,
+    zoomObject = d3.zoomIdentity;
+
+// trans_dir example:
+// {
+//   0: {var_1: {down: {in: true, out: false}, up: {in: true, out: true}}, 
+//       var_2: {down: {in: false, out: false}, up: {in: false, out: true}},
+//       ...},
+//   1: {...},
+//   ...
+// }
+
+
+var xScale = d3.scaleLinear()
+  .domain([d3.min(thrs[xDim],parseFloat),
+           d3.max(thrs[xDim],parseFloat)])
+  .range([margin.left, width - margin.right]);
+
+var yScale = d3.scaleLinear()
+  .domain([d3.min(thrs[yDim],parseFloat),
+           d3.max(thrs[yDim],parseFloat)])
+  .range([height - margin.bottom, margin.top]);
+
+// TODO: implement zooming by brushing to allow user do disproportional zoom
+var brushX = d3.brushX()
+    .extent([[margin.left, 0], [width-margin.right, margin.bottom]])
+    .on("end", brushedX),
+    
+    brushY = d3.brushY()
+    .extent([[-margin.left, margin.top], [0, height-margin.bottom]])
+    .on("end", brushedY);
+
+var zoom = d3.zoom()
+          .scaleExtent([1, Infinity])
+          .translateExtent([[0,0],[width,height]])
+          .on("zoom", zoomed);
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var container = svg.append("g")
+        .attr("id","cont")
+        //.attr("transform", "translate("+(margin.left)+","+(margin.top)+")")
+        .call(zoom);
+
+var xLabel = svg.append("text")
+    .attr("id", "xlabel")
+    .attr("class", "label")
+    .attr("x", width*0.5)
+    .attr("y", height-10)
+    .attr("stroke", "black")
+    .text(function() { return xDim; });
+var yLabel = svg.append("text")
+    .attr("id", "ylabel")
+    .attr("class", "label")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -width*0.5)
+    .attr("y", 15)
+    .attr("stroke", "black")
+    .text(function() { return yDim; });
+
+var bottomPanel = svg.append("g")
+    .attr("id", "bPanel")
+    .attr("class", "panel")
+    .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")");
+    
+var xAxis = d3.axisBottom(xScale);
+var gX = bottomPanel.append("g")
+    .attr("id", "xAxis")
+    .attr("class", "axis")
+    .call(xAxis); // Create an axis component with d3.axisBottom
+var gBX = bottomPanel.append("g")
+    .attr("id", "xBrush")
+    .attr("class", "brush")
+    .call(brushX);
+    
+var leftPanel = svg.append("g")
+    .attr("id", "lPanel")
+    .attr("class", "panel")
+    .attr("transform", "translate("+margin.left+","+0+")");
+
+var yAxis = d3.axisLeft(yScale);
+var gY = leftPanel.append("g")
+    .attr("id", "yAxis")
+    .attr("class", "axis")
+    .call(yAxis); // Create an axis component with d3.axisLeft
+var gBY = leftPanel.append("g")
+    .attr("id", "xBrush")
+    .attr("class", "brush")
+    .call(brushY);
+
+multiarr = generateVertices(thrs, xDim, yDim);
+combins = getCombitations(multiarr);
+compute_tss();
+transform_tss();
+draw();
+
+// ################# definitions of functions #################
+    
+// returns array of N arrays (N = dimensions/variables count) where each array contains concerned thresholds (for X and Y all, for the rest just two adjacent values)
+function generateVertices(thrs, x, y) {
+  var multiarray = [];
+  window.bio.vars.forEach(key => {
+    var arr = [];
+    var val = thrs[key].map(Number);
+    if(key == x || key == y) arr = val;       // return all thresholds (for variable on X or Y)
+    else {
+      // return nearest lower and upper threshold according to value of slider (for other variables)
+      aVal = Number(d3.select("#slider_"+key).property("value"));
+      if(aVal == d3.max(val)) arr = val.slice(-2);
+      else arr = [d3.max(val.filter(x => x <= aVal)), d3.min(val.filter(x => x > aVal))];
+    }
+    multiarray.push(arr);
+  });
+  return multiarray;
+}
+    
+    
+// computes all unique combinations of N arrays inside one array into new array of M arrays of length N where each item is from different initial array
+// input and output is just array of arrays
+function getCombitations(arrays, combine = [], finalList = []) {
+    if (!arrays.length) {
+        finalList.push(combine);
+    } else {
+        arrays[0].forEach(now => {
+            let nextArrs = arrays.slice(1);
+            let copy = combine.slice();
+            copy.push(now);
+            getCombitations(nextArrs, copy, finalList);
+        });
+    }
+    return finalList;
+}
+
+// computes all possible transitions for particular vertex (vars and params contain one value for each item)
+function compute_trans(vars, params, x_ind, y_ind, lower_b) {
+  var offset_x = thrs[xDim].length -1,  // for counting of states IDs
+      offset_y = thrs[yDim].length -1,
+      offset_all = offset_x*offset_y;   // number of all states in one layer
+      
+  // TODO: check if there is meanning in iteration over all equations (or just for 2 in X and Y axis)
+  // must be rewritten to loop over all equations/dimensions,
+  // will create flat state wrapper beyond the lower/upper boundaries in all diemnsions (according to notes on paper),
+  // computes all loops based on all states
+  // finally, remove all wrapper states and concerned transitions by filter arrays and reduce dictionary
+  
+  var state_id = y_ind*offset_x+x_ind;          // x:+ y:+
+  if(state_id >= 0 && state_id < offset_all && !trans_dir.hasOwnProperty(state_id)) trans_dir[state_id] = {};
+  state_id = y_ind*offset_x+x_ind-1;            // x:- y:+
+  if(state_id >= 0 && state_id < offset_all && !trans_dir.hasOwnProperty(state_id)) trans_dir[state_id] = {};
+  state_id = y_ind*offset_x+x_ind-offset_x;     // x:+ y:-
+  if(state_id >= 0 && state_id < offset_all && !trans_dir.hasOwnProperty(state_id)) trans_dir[state_id] = {};
+  state_id = y_ind*offset_x+x_ind-offset_x-1;   // x:- y:-
+  if(state_id >= 0 && state_id < offset_all && !trans_dir.hasOwnProperty(state_id)) trans_dir[state_id] = {};
+  
+  for (const [key, eq] of Object.entries(window.bio.eqs)) {
+    var diff = eq(vars, params);
+    
+    state_id = y_ind*offset_x+x_ind;              // x:+ y:+
+    if(state_id >= 0 && state_id < offset_all && !trans_dir[state_id].hasOwnProperty(key)) 
+      trans_dir[state_id][key] = {down: {in: false, out: false}, up: {in: false, out: false}};
+    state_id = y_ind*offset_x+x_ind-1;            // x:- y:+
+    if(state_id >= 0 && state_id < offset_all && !trans_dir[state_id].hasOwnProperty(key)) 
+      trans_dir[state_id][key] = {down: {in: false, out: false}, up: {in: false, out: false}};
+    state_id = y_ind*offset_x+x_ind-offset_x;     // x:+ y:-
+    if(state_id >= 0 && state_id < offset_all && !trans_dir[state_id].hasOwnProperty(key)) 
+      trans_dir[state_id][key] = {down: {in: false, out: false}, up: {in: false, out: false}};
+    state_id = y_ind*offset_x+x_ind-offset_x-1;   // x:- y:-
+    if(state_id >= 0 && state_id < offset_all && !trans_dir[state_id].hasOwnProperty(key)) 
+      trans_dir[state_id][key] = {down: {in: false, out: false}, up: {in: false, out: false}};
+    
+    if(xDim == key) {
+      // for negative differential
+      if(diff < 0)  {
+        // for non-boundary vertices of current dimension
+        if(x_ind > 0 && x_ind < offset_x) {
+          // for states above current vertex
+          if(y_ind < offset_y) {
+            var sid = y_ind*offset_x+x_ind;
+            if(trans.hasOwnProperty(sid)) {
+              if(!trans[sid].includes(sid-1)) trans[sid] = trans[sid].concat([sid-1]);
+            } else {
+              trans[sid] = [sid-1];
+            }
+            trans_dir[sid][key]['down']['out'] = true;
+            trans_dir[sid-1][key]['up']['in'] = true;
+          }
+          // for states below current vertex
+          if(y_ind > 0) {
+            var sid = y_ind*offset_x+x_ind-offset_x;
+            if(trans.hasOwnProperty(sid)) {
+              if(!trans[sid].includes(sid-1)) trans[sid] = trans[sid].concat([sid-1]);
+            } else {
+              trans[sid] = [sid-1];
+            }
+            trans_dir[sid][key]['down']['out'] = true;
+            trans_dir[sid-1][key]['up']['in'] = true;
+          }
+        // for boundary vertices of current dimension (x_ind == 0 || x_ind == offset_x)
+        } else {
+          var down_dir = 'out',
+              up_dir   = 'in';
+          if     (x_ind == 0 && y_ind > 0 && y_ind < offset_y) {
+            trans_dir[y_ind*offset_x+x_ind][key]['down'][down_dir] = true;
+            trans_dir[(y_ind-1)*offset_x+x_ind][key]['down'][down_dir] = true;
+          }
+          else if(x_ind == offset_x && y_ind > 0 && y_ind < offset_y) {
+            trans_dir[y_ind*offset_x+x_ind-1][key]['up'][up_dir] = true;
+            trans_dir[(y_ind-1)*offset_x+x_ind-1][key]['up'][up_dir] = true;
+          }
+          else if(x_ind == 0 && y_ind == 0)               trans_dir['0'][key]['down'][down_dir] = true;
+          else if(x_ind == 0 && y_ind == offset_y)        trans_dir[(y_ind-1)*offset_x][key]['down'][down_dir] = true;
+          else if(x_ind == offset_x && y_ind == 0)        trans_dir[(x_ind-1)][key]['up'][up_dir] = true;
+          else if(x_ind == offset_x && y_ind == offset_y) trans_dir[(y_ind-1)*offset_x-1][key]['up'][up_dir] = true;
+        }
+      // for positive differential
+      } else if(diff > 0) {
+        // for non-boundary vertices of current dimension
+        if(x_ind > 0 && x_ind < offset_x) {
+          // for states above current vertex
+          if(y_ind < offset_y) {
+            var sid = y_ind*offset_x+x_ind-1;
+            if(trans.hasOwnProperty(sid)) {
+              if(!trans[sid].includes(sid+1)) trans[sid] = trans[sid].concat([sid+1]);
+            } else {
+              trans[sid] = [sid+1];
+            }
+            trans_dir[sid][key]['up']['out'] = true;
+            trans_dir[sid+1][key]['down']['in'] = true;
+          }
+          // for states below current vertex
+          if(y_ind > 0) {
+            var sid = y_ind*offset_x+x_ind-1-offset_x;
+            if(trans.hasOwnProperty(sid)) {
+              if(!trans[sid].includes(sid+1)) trans[sid] = trans[sid].concat([sid+1]);
+            } else {
+              trans[sid] = [sid+1];
+            }
+            trans_dir[sid][key]['up']['out'] = true;
+            trans_dir[sid+1][key]['down']['in'] = true;
+          }
+        // for boundary vertices of current dimension (x_ind == 0 || x_ind == offset_x)
+        } else {
+          var down_dir = 'in',
+              up_dir   = 'out';
+          if     (x_ind == 0 && y_ind > 0 && y_ind < offset_y) {
+            trans_dir[y_ind*offset_x+x_ind][key]['down'][down_dir] = true;
+            trans_dir[(y_ind-1)*offset_x+x_ind][key]['down'][down_dir] = true;
+          }
+          else if(x_ind == offset_x && y_ind > 0 && y_ind < offset_y) {
+            trans_dir[y_ind*offset_x+x_ind-1][key]['up'][up_dir] = true;
+            trans_dir[(y_ind-1)*offset_x+x_ind-1][key]['up'][up_dir] = true;
+          }
+          else if(x_ind == 0 && y_ind == 0)               trans_dir['0'][key]['down'][down_dir] = true;
+          else if(x_ind == 0 && y_ind == offset_y)        trans_dir[(y_ind-1)*offset_x][key]['down'][down_dir] = true;
+          else if(x_ind == offset_x && y_ind == 0)        trans_dir[(x_ind-1)][key]['up'][up_dir] = true;
+          else if(x_ind == offset_x && y_ind == offset_y) trans_dir[(y_ind-1)*offset_x-1][key]['up'][up_dir] = true;
+        }
+      }
+    } else if(yDim == key) {
+      // for negative differential
+      if(diff < 0) {
+        // for non-boundary vertices of current dimension
+        if(y_ind > 0 && y_ind < offset_y) {
+          // for states above current vertex
+          if(x_ind < offset_x) {
+            var sid = y_ind*offset_x+x_ind;
+            if(trans.hasOwnProperty(sid)) {
+              if(!trans[sid].includes(sid-offset_x)) trans[sid] = trans[sid].concat([sid-offset_x]);
+            } else {
+              trans[sid] = [sid-offset_x];
+            }
+            trans_dir[sid][key]['down']['out'] = true;
+            trans_dir[sid-offset_x][key]['up']['in'] = true;
+          }
+          // for states below current vertex
+          if(x_ind > 0) {
+            var sid = y_ind*offset_x+x_ind-1;
+            if(trans.hasOwnProperty(sid)) {
+              if(!trans[sid].includes(sid-offset_x)) trans[sid] = trans[sid].concat([sid-offset_x]);
+            } else {
+              trans[sid] = [sid-offset_x];
+            }
+            trans_dir[sid][key]['down']['out'] = true;
+            trans_dir[sid-offset_x][key]['up']['in'] = true;
+          }
+        // for boundary vertices of current dimension (y_ind == 0 || y_ind == offset_y)
+        } else {
+          var down_dir = 'out',
+              up_dir   = 'in';
+          if     (y_ind == 0 && x_ind > 0 && x_ind < offset_x) {
+            trans_dir[y_ind*offset_x+x_ind][key]['down'][down_dir] = true;
+            trans_dir[y_ind*offset_x+x_ind-1][key]['down'][down_dir] = true;
+          }
+          else if(y_ind == offset_y && x_ind > 0 && x_ind < offset_x) {
+            trans_dir[(y_ind-1)*offset_x+x_ind][key]['up'][up_dir] = true;
+            trans_dir[(y_ind-1)*offset_x+x_ind-1][key]['up'][up_dir] = true;
+          }
+          else if(x_ind == 0 && y_ind == 0)               trans_dir['0'][key]['down'][down_dir] = true;
+          else if(x_ind == 0 && y_ind == offset_y)        trans_dir[(y_ind-1)*offset_x][key]['up'][up_dir] = true;
+          else if(x_ind == offset_x && y_ind == 0)        trans_dir[(x_ind-1)][key]['down'][down_dir] = true;
+          else if(x_ind == offset_x && y_ind == offset_y) trans_dir[(y_ind-1)*offset_x-1][key]['up'][up_dir] = true;
+        }
+      // for positive differential
+      } else if(diff > 0) {
+        // for non-boundary vertices of current dimension
+        if(y_ind > 0 && y_ind < offset_y) {
+          // for states above current vertex
+          if(x_ind < offset_x) {
+            var sid = y_ind*offset_x+x_ind-offset_x;
+            if(trans.hasOwnProperty(sid)) {
+              if(!trans[sid].includes(sid+offset_x)) trans[sid] = trans[sid].concat([sid+offset_x]);
+            } else {
+              trans[sid] = [sid+offset_x];
+            }
+            trans_dir[sid][key]['up']['out'] = true;
+            trans_dir[sid+offset_x][key]['down']['in'] = true;
+          }
+          // for states below current vertex
+          if(x_ind > 0) {
+            var sid = y_ind*offset_x+x_ind-offset_x-1;
+            if(trans.hasOwnProperty(sid)) {
+              if(!trans[sid].includes(sid+offset_x)) trans[sid] = trans[sid].concat([sid+offset_x]);
+            } else {
+              trans[sid] = [sid+offset_x];
+            }
+            trans_dir[sid][key]['up']['out'] = true;
+            trans_dir[sid+offset_x][key]['down']['in'] = true;
+          }
+        // for boundary vertices of current dimension (y_ind == 0 || y_ind == offset_y)
+        } else {
+          var down_dir = 'in',
+              up_dir   = 'out';
+          if     (y_ind == 0 && x_ind > 0 && x_ind < offset_x) {
+            trans_dir[y_ind*offset_x+x_ind][key]['down'][down_dir] = true;
+            trans_dir[y_ind*offset_x+x_ind-1][key]['down'][down_dir] = true;
+          }
+          else if(y_ind == offset_y && x_ind > 0 && x_ind < offset_x) {
+            trans_dir[(y_ind-1)*offset_x+x_ind][key]['up'][up_dir] = true;
+            trans_dir[(y_ind-1)*offset_x+x_ind-1][key]['up'][up_dir] = true;
+          }
+          else if(x_ind == 0 && y_ind == 0)               trans_dir['0'][key]['down'][down_dir] = true;
+          else if(x_ind == 0 && y_ind == offset_y)        trans_dir[(y_ind-1)*offset_x][key]['up'][up_dir] = true;
+          else if(x_ind == offset_x && y_ind == 0)        trans_dir[(x_ind-1)][key]['down'][down_dir] = true;
+          else if(x_ind == offset_x && y_ind == offset_y) trans_dir[(y_ind-1)*offset_x-1][key]['up'][up_dir] = true;
+        }
+      }
+    // here is part for dimensions different from X and Y
+    } else {
+      var dir = null,
+          site = null;
+      // for negative differential
+      if(diff < 0) {
+        // vertex is on the lower facet of states (in current dimension)
+        if(lower_b[key]) {
+          dir  = 'out';
+          site = 'down';
+        // vertex is on the upper facet of states (in current dimension)
+        } else {
+          dir  = 'in';
+          site = 'up';
+        }
+      // for positive differential
+      } else if(diff > 0) {
+        // vertex is on the lower facet of states (in current dimension)
+        if(lower_b[key]) {
+          dir  = 'in';
+          site = 'down';
+        // vertex is on the upper facet of states (in current dimension)
+        } else {
+          dir  = 'out';
+          site = 'up';
+        }
+      }
+      // decision point for concerned states of particular vertex (one = corners, two = borders, four = inland)
+      if(x_ind > 0 && x_ind < offset_x && y_ind > 0 && y_ind < offset_y) {
+        trans_dir[y_ind*offset_x+x_ind][key][site][dir] = true;
+        trans_dir[y_ind*offset_x+x_ind-1][key][site][dir] = true;
+        trans_dir[y_ind*offset_x+x_ind-offset_x][key][site][dir] = true;
+        trans_dir[y_ind*offset_x+x_ind-offset_x-1][key][site][dir] = true;
+      } else if(x_ind == 0 && y_ind > 0 && y_ind < offset_y) {
+        trans_dir[y_ind*offset_x+x_ind][key][site][dir] = true;
+        trans_dir[y_ind*offset_x+x_ind-offset_x][key][site][dir] = true;
+      } else if(x_ind == offset_x && y_ind > 0 && y_ind < offset_y) {
+        trans_dir[y_ind*offset_x+x_ind-1][key][site][dir] = true;
+        trans_dir[y_ind*offset_x+x_ind-offset_x-1][key][site][dir] = true;
+      } else if(y_ind == 0 && x_ind > 0 && x_ind < offset_x) {
+        trans_dir[y_ind*offset_x+x_ind][key][site][dir] = true;
+        trans_dir[y_ind*offset_x+x_ind-1][key][site][dir] = true;
+      } else if(y_ind == offset_y && x_ind > 0 && x_ind < offset_x) {
+        trans_dir[y_ind*offset_x+x_ind-offset_x][key][site][dir] = true;
+        trans_dir[y_ind*offset_x+x_ind-offset_x-1][key][site][dir] = true;
+      } else if(x_ind == 0 && y_ind == 0) {
+        trans_dir['0'][key][site][dir] = true;
+      } else if(x_ind == offset_x && y_ind == 0) {
+        trans_dir[x_ind-1][key][site][dir] = true;
+      } else if(x_ind == 0 && y_ind == offset_y) {
+        trans_dir[y_ind*offset_x-offset_x][key][site][dir] = true;
+      } else if(x_ind == offset_x && y_ind == offset_y) {
+        trans_dir[y_ind*offset_x+x_ind-offset_x-1][key][site][dir] = true;
+      }
+    }
+  }
+}
+
+// coumputes all transitions and stores them into dictionary 
+// (all numbers are indices of states) like in example:
+// trans = {
+//   0:[0,1],
+//   1:[0,3],
+//   2:[3],
+//   3:[3]
+// };
+function compute_tss() {
+  trans = {};
+  trans_dir = {};
+  
+  // fill parameters with current values
+  var params = {};
+  for(var v in window.bio.params) {
+    val = window.bio.params[v][0];
+    params[val] = d3.select("#slider_"+val).property("value"); // according to slider for parameters
+  }
+  
+  for(var c = 0; c < combins.length; c++) {
+    var vars = {},
+        lower_bound = {},
+        ix = null,
+        iy = null;
+    // fill variables with current values
+    for(var v in window.bio.vars) {
+      val = window.bio.vars[v];
+      vars[val] = combins[c][v];
+      lower_bound[val] = d3.min(multiarr[v].map(Number)) == combins[c][v];
+      // for vars on X and Y it is important to store indices of their current threshold used
+      if(val == xDim) ix = thrs[val].findIndex(x => Number(x) == vars[val]);
+      else if(val == yDim) iy = thrs[val].findIndex(x => Number(x) == vars[val]);
+    }
+    compute_trans(vars, params, ix, iy, lower_bound);
+  }
+  // part for adding of self-loops
+  for(const [sid, dims] of Object.entries(trans_dir)) {
+    var selfloop = true;
+    for(const [dim, dirs] of Object.entries(dims)) {
+      selfloop = selfloop && !( (dirs.up.in && dirs.down.out && !dirs.up.out && !dirs.down.in) || 
+                                (dirs.up.out && dirs.down.in && !dirs.up.in && !dirs.down.out) )
+    }
+    if(selfloop) {
+      if(trans.hasOwnProperty(sid)) {
+        trans[sid] = trans[sid].concat([sid]);
+      } else {
+        trans[sid] = [sid];
+      }
+    }
+  }
+}
+function transform_tss() {
+  statedata = [];
+  transdata = [];
+  for(var iy = 0; iy < thrs[yDim].length-1; iy++) {
+    for(var ix = 0; ix < thrs[xDim].length-1; ix++) {
+      statedata.push({x: xScale(thrs[xDim][ix]), 
+                      y: yScale(thrs[yDim][iy+1]),
+                      width:  xScale(thrs[xDim][ix+1])-xScale(thrs[xDim][ix]),
+                      height: yScale(thrs[yDim][iy])-yScale(thrs[yDim][iy+1]),
+                      id: "s"+ix+"x"+iy});
+    }
+  }
+  for(var f in trans) {
+    for(var t in trans[f]) {
+      var begin = statedata[f];
+      var end = statedata[trans[f][t]];
+      transdata.push({
+        x0: begin.x+begin.width/2,
+        y0: begin.y+begin.height/2,
+        x1: (begin.x == end.x ? 
+             (begin.x+begin.width/2) : 
+             (begin.x < end.x ? end.x : begin.x)),
+        y1: (begin.y == end.y ? 
+             (begin.y+begin.height/2) : 
+             (begin.y < end.y ? end.y : begin.y)),
+        x2: (begin.x == end.x ? 
+             -0.5*arrowlen :
+             (begin.x < end.x ? -arrowlen : arrowlen)),
+        y2: (begin.y == end.y ? 
+             -0.5*arrowlen :
+             (begin.y < end.y ? -arrowlen : arrowlen)),
+        x3: (begin.x == end.x ? arrowlen : 0),
+        y3: (begin.y == end.y ? arrowlen : 0),
+        id: "t"+f+"-"+trans[f][t],
+        // NOTE: for color selection in Y axis, the condition must be the opposite because current values are in frame scale (range, not domain) 
+        // and so they are upside down (fortunately in above code it doesn't matter)
+        color: (begin == end ? neutral_col : (begin.x < end.x || begin.y > end.y ? positive_col : negative_col)),
+        class: (begin == end ? "loop" : "transition")});
+    }
+  }
+}
+
+function update_axes() {
+  // Update axes labels according to selected diemnsions
+  d3.select('#xlabel').text(xDim);
+  d3.select('#ylabel').text(yDim);
+  // Update scales according to selected diemnsions
+  xScale = d3.scaleLinear()
+              .domain([d3.min(thrs[xDim],parseFloat),
+                       d3.max(thrs[xDim],parseFloat)])
+              .range([margin.left, width - margin.right]);
+
+  yScale = d3.scaleLinear()
+              .domain([d3.min(thrs[yDim],parseFloat),
+                       d3.max(thrs[yDim],parseFloat)])
+              .range([height - margin.bottom, margin.top]);
+  // Update an axis component according to selected dimensions
+  xAxis = d3.axisBottom(xScale);
+  gX.call(xAxis);
+  yAxis = d3.axisLeft(yScale);
+  gY.call(yAxis);
+  // reset brushes
+  gBX.call(brushX.move, null);
+  gBY.call(brushY.move, null);
+}
+function resettedReach() {
+  reach_start=null; 
+  d3.selectAll(".states").attr("fill", color);
+}
+function resettedZoom() {
+  update_axes()
+  container.transition()
+      .duration(500)
+      .call(zoom.transform, d3.zoomIdentity);
+}
+function zoomed() {
+  if(d3.event.transform) zoomObject = d3.event.transform;
+  zoomScale = zoomObject.k;
+  
+  d3.selectAll(".states")
+    .attr("transform","translate("+(0+zoomObject.x)+","+(0+zoomObject.y)+") \
+           scale("+(1*zoomObject.k)+","+(1*zoomObject.k)+")")
+    .attr("stroke-width", function(d,i) {
+      return (d3.select(this).attr("pointed")==true ? 
+              hoverStrokeWidth : 
+              normalStrokeWidth)/zoomScale;
+    });
+  d3.selectAll(".transition")
+    .attr("transform","translate("+(0+zoomObject.x)+","+(0+zoomObject.y)+") \
+           scale("+(1*zoomObject.k)+","+(1*zoomObject.k)+")")
+    .attr("d", (d,i) => {
+      return "M"+(d.x0)+" "+(d.y0)+" \
+              L"+(d.x1)+" "+(d.y1)+" \
+              l"+(d.x2/zoomScale)+" "+(d.y2/zoomScale)+" \
+              l"+(d.x3/zoomScale)+" "+(d.y3/zoomScale)+" \
+              L"+(d.x1)+" "+(d.y1)+" Z";});
+  d3.selectAll('.loop')
+    .attr("transform","translate("+(0+zoomObject.x)+","+(0+zoomObject.y)+") \
+           scale("+(1*zoomObject.k)+","+(1*zoomObject.k)+")")
+    .attr("r", selfloopWidth/zoomScale);
+  
+  gX.call(xAxis.scale(zoomObject.rescaleX(xScale)));
+  gY.call(yAxis.scale(zoomObject.rescaleY(yScale)));
+  // reset brushes
+  gBX.call(brushX.move, null);
+  gBY.call(brushY.move, null);
+}
+function brushedX() {
+  if (!d3.event.sourceEvent) return; // Only transition after input.
+  if (!d3.event.selection) return; // Ignore empty selections.
+  var sel = d3.event.selection;
+  var domain = sel.map(xAxis.scale().invert);
+  // TODO: set up brush.move for scale over some threshold (similar to zoom.scaleExtent([1, 100000]) ) to force it to resize along that threshold
+  //console.log((d3.max(thrs[xDim],parseFloat)-d3.min(thrs[xDim],parseFloat))/(domain[1]-domain[0]));
+  //if((d3.max(thrs[xDim],parseFloat)-d3.min(thrs[xDim],parseFloat))/(domain[1]-domain[0]) > 100000) return;
+  
+  xScale = d3.scaleLinear()
+              .domain(domain)
+              .range([margin.left, width - margin.right]);
+  zoomed()
+}
+function brushedY() {
+  if (!d3.event.sourceEvent) return; // Only transition after input.
+  if (!d3.event.selection) return; // Ignore empty selections.
+  var sel = d3.event.selection;
+  var domain = sel.map(yAxis.scale().invert);
+  
+  yScale = d3.scaleLinear()
+              .domain(domain.reverse())
+              .range([height - margin.bottom, margin.top]);
+  zoomed()
+}
+function handleMouseOver(d, i) {
+  d3.select(this).attr("stroke-width", hoverStrokeWidth/zoomScale);
+  d3.select(this).attr("pointed", true);
+  
+  var div = document.getElementById("infoPanel");
+  var content = "state: "+i+"";
+  for(var v = 0; v < window.bio.vars.length; v++) {
+    var key = window.bio.vars[v];
+    if(xDim == key)
+      // (+some_number) is a trick how to get rid of trailling zeroes
+      content += "\n"+xDim+": ["+(+zoomObject.rescaleX(xScale).invert(parseFloat(d.x)).toFixed(3))+", "\
+                                +(+zoomObject.rescaleX(xScale).invert(parseFloat(d.x+d.width)).toFixed(3))+"]";
+    else if(yDim == key)
+      content += "\n"+yDim+": ["+(+zoomObject.rescaleY(yScale).invert(parseFloat(d.y+d.height)).toFixed(3))+", "\
+                                +(+zoomObject.rescaleY(yScale).invert(parseFloat(d.y)).toFixed(3))+"]";
+    else
+      content += "\n"+key+": ["+d3.min(multiarr[v].map(Number))+", "+d3.max(multiarr[v].map(Number))+"]";
+  }
+  div.value = content;
+}
+function handleMouseOut(d, i) {
+  d3.select(this).attr("stroke-width", normalStrokeWidth/zoomScale);
+  d3.select(this).attr("pointed", false);
+  
+  var div = document.getElementById("infoPanel");
+  div.value = "";
+}
+// counts rachability in TSS from state with ID index, results in array of reachable state indices
+function reach(index) {
+  var out = new Set([index]),
+      cElem = new Set([index]);
+  do {
+    cElem.forEach(elem => {if(trans.hasOwnProperty(elem)) trans[elem].forEach(el => {cElem.add(el)})});
+    var cSize = out.size;
+    cElem = cElem.difference(out)
+    cElem.forEach(el => {out.add(el)})
+  } while (cSize != out.size);
+  return [...out];
+}
+// function for on-state mouse-click event (counts reachability in TSS)
+function handleMouseClick(d, i) {
+  reach_start = i;
+  var reachable = reach(i);
+  d3.selectAll(".states").attr("fill", color);
+  d3.selectAll(".states")
+    .filter(function(d,i) {
+      return reachable.includes(i);
+    }).attr("fill", reachColor)
+}
+
+function draw() {
+  
+  d3.selectAll(".transition").remove(); // because of the automatic redrawing of TSS in response slider etc.
+  d3.selectAll(".loop").remove();       // because of the automatic redrawing of TSS in response slider etc.
+  
+  container.selectAll(".transition")
+    .data(transdata.filter(d => d.class == "transition"))
+    .enter()
+    .append("path")
+    .attr("id", d => d.id)
+    .attr("class", "transition")
+    .attr("stroke", d => d.color)
+    .attr("stroke-width", transWidth)
+    .attr("d", d => "M"+(d.x0)+" "+(d.y0)+" L"+(d.x1)+" "+(d.y1)+" \
+                    l"+(d.x2)+" "+(d.y2)+" l"+(d.x3)+" "+(d.y3)+" \
+                    L"+(d.x1)+" "+(d.y1)+" Z");
+                    
+  container.selectAll(".loop")
+    .data(transdata.filter(d => d.class == "loop"))
+    .enter()
+    .append("circle")
+    .attr("id", d => d.id)
+    .attr("class", "loop")
+    .attr("cx", d => d.x0)
+    .attr("cy", d => d.y0)
+    .attr("r", selfloopWidth)
+    .attr("stroke", d => d.color);
+  
+  container.selectAll(".states")
+    .data(statedata)
+    .enter()
+    .append("rect")
+    .attr("class", "states")
+    .attr("id", d => {return d.id})
+    .attr("x", d => {return d.x})
+    .attr("y", d => {return d.y})
+    .attr("width", d => {return d.width})
+    .attr("height", d => {return d.height})
+    .attr("fill", color)
+    .attr("stroke", "black")
+    .attr("stroke-width", normalStrokeWidth/zoomScale)
+    .attr("pointed", false)
+    .on("click", handleMouseClick)
+    .on("mouseover", handleMouseOver)
+    .on("mouseout", handleMouseOut);
+}
+
+    </script>
+  </body>
+
+</html>
