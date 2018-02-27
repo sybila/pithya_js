@@ -770,7 +770,8 @@ function reach(event) {
   d3.select("#zoomField").moveUp();
 }
 // function for in-field mouse-click event (counts trajectory in VF)
-function handleMouseClick() {
+function handleMouseClick(d, i) {
+  console.log("heja");
   reach(d3.mouse(this));
 }
 
@@ -779,27 +780,27 @@ function draw() {
   container.select("#zoomField").remove();
   
   container.selectAll(".vector")
-      .data(vectors)
-      .enter()
-      .append("path")
-      .attr("id", d => d.id)
-      .attr("class", "vector")
-      .attr("marker-end", d => d.head)
-      .attr("stroke", d => d.color)
-      .attr("stroke-width", transWidth)
-      .attr("d", d => "M"+(d.x0)+" "+(d.y0)+" L"+(d.x1)+" "+(d.y1)+" ");
+    .data(vectors)
+    .enter()
+    .append("path")
+    .attr("id", d => d.id)
+    .attr("class", "vector")
+    .attr("marker-end", d => d.head)
+    .attr("stroke", d => d.color)
+    .attr("stroke-width", transWidth)
+    .attr("d", d => "M"+(d.x0)+" "+(d.y0)+" L"+(d.x1)+" "+(d.y1)+" ");
       
     
   container.append("rect")
-      .attr("id", "zoomField")
-      .attr("x", margin.left)
-      .attr("y", margin.top)
-      .attr("width", width-margin.right-margin.left)
-      .attr("height", height-margin.bottom-margin.top)
-      .attr("fill", "none")
+    .attr("id", "zoomField")
+    .attr("x", margin.left)
+    .attr("y", margin.top)
+    .attr("width", width-margin.right-margin.left)
+    .attr("height", height-margin.bottom-margin.top)
+    .attr("fill", "none")
+    .on("click", handleMouseClick)
     .on("mousemove", handleMouseOver)
-    .on("mouseout", handleMouseOut)
-    .on("click", handleMouseClick);
+    .on("mouseout", handleMouseOut);
 }
 
     </script>
