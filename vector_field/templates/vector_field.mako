@@ -419,7 +419,6 @@ var width = 550,
     hoverStrokeWidth = 4,
     transWidth = 2,
     selfloopWidth = 4,
-    zoomScale = 1,
     vectors = [],
     zoomObject = d3.zoomIdentity;
 
@@ -629,8 +628,6 @@ function resettedZoom() {
 }
 function zoomed() {
   if(d3.event.transform) zoomObject = d3.event.transform;
-  zoomScale = zoomObject.k;
-  //console.log(zoomScale);
  
   generateGrid();
   draw();
@@ -650,10 +647,12 @@ function brushedX() {
   // TODO: set up brush.move for scale over some threshold (similar to zoom.scaleExtent([1, 100000]) ) to force it to resize along that threshold
   //console.log((d3.max(thrs[xDim],parseFloat)-d3.min(thrs[xDim],parseFloat))/(domain[1]-domain[0]));
   //if((d3.max(thrs[xDim],parseFloat)-d3.min(thrs[xDim],parseFloat))/(domain[1]-domain[0]) > 100000) return;
+    
+  scale = xScale.copy().domain(domain);
+  range = scale.range().map(x => zoomObject.applyX(x));
+  domain = range.map(scale.invert);
+  xScale.domain(domain);
   
-  xScale = d3.scaleLinear()
-              .domain(domain)
-              .range([margin.left, width - margin.right]);
   zoomed()
 }
 function brushedY() {
@@ -662,9 +661,11 @@ function brushedY() {
   var sel = d3.event.selection;
   var domain = sel.map(yAxis.scale().invert);
   
-  yScale = d3.scaleLinear()
-              .domain(domain.reverse())
-              .range([height - margin.bottom, margin.top]);
+  scale = yScale.copy().domain(domain.reverse());
+  range = scale.range().map(y => zoomObject.applyY(y));
+  domain = range.map(scale.invert);
+  yScale.domain(domain);
+  
   zoomed()
 }
 function handleMouseOver(d, i) {
@@ -771,7 +772,6 @@ function reach(event) {
 }
 // function for in-field mouse-click event (counts trajectory in VF)
 function handleMouseClick(d, i) {
-  console.log("heja");
   reach(d3.mouse(this));
 }
 

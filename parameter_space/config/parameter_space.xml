@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE visualization SYSTEM "../../visualization.dtd">
-<visualization name="Transition State Space">
+<visualization name="Parameter Space">
     <data_sources>
         <data_source>
             <model_class>HistoryDatasetAssociation</model_class>
@@ -11,5 +10,5 @@
     <params>
         <param type="dataset" var_name_in_template="hda" required="true">dataset_id</param>
     </params>
-    <template>transition_state_space.mako</template>
+    <template>parameter_space.mako</template>
 </visualization>

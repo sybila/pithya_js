@@ -258,7 +258,7 @@
           <% 
           min_val  = float(val[1])
           max_val  = float(val[2])
-          step_val = abs(max_val-min_val)*0.01
+          step_val = abs(max_val-min_val)*0.001
           %>
           par. ${val[0]}: <span id="text_${val[0]}"></span><br>
           <input type="range" min=${min_val} max=${max_val} value=${min_val} step=${step_val} class="slider" id="slider_${val[0]}"><br>
@@ -774,7 +774,12 @@ function brushedX() {
   // TODO: set up brush.move for scale over some threshold (similar to zoom.scaleExtent([1, 100000]) ) to force it to resize along that threshold
   // TODO: implement own control over zoom extent because with embeded functions either it's not possible to move or unzoome after brush or
   //       it's possible to zoom out into a point
-  xScale.domain(sel.map(xScale.invert, xScale));
+    
+  scale = xScale.copy().domain(domain);
+  range = scale.range().map(x => zoomObject.applyX(x));
+  domain = range.map(scale.invert);
+  xScale.domain(domain);
+  
   zoomed();
 }
 function brushedY() {
@@ -782,8 +787,12 @@ function brushedY() {
   if (!d3.event.selection) return; // Ignore empty selections.
   var sel = d3.event.selection;
   var domain = sel.map(yAxis.scale().invert);
-
-  yScale.domain(sel.reverse().map(yScale.invert, yScale));
+  
+  scale = yScale.copy().domain(domain.reverse());
+  range = scale.range().map(y => zoomObject.applyY(y));
+  domain = range.map(scale.invert);
+  yScale.domain(domain);
+  
   zoomed();
 }
 function fill_info_panel(d) {
