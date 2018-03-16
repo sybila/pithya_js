@@ -104,10 +104,13 @@
         font-family: sans-serif;
         font-size: 18px;
       }
-      #cont {
+      .containers {
         pointer-events: all;
       }
-      #zoomObject {
+      #zoomObject_PS {
+      }
+      .interval {
+        vector-effect: non-scaling-stroke; 
       }
       .loop {
         vector-effect: non-scaling-stroke; 
@@ -128,37 +131,66 @@
         width: 230px;
         
       }
-      #resetZoomBtn {
+      #resetZoomBtn_PS {
         position: absolute;
         top: 10px;
       }
-      #resetReachBtn {
+      #resetReachBtn_PS {
         position: absolute;
         top: 40px;
       }
-      #infoPanel {
+      #infoPanel_PS {
         position: absolute;
         top: 70px;
         flex-grow: 1;
       }
-      #x_axis_div {
+      #x_axis_PS_div {
         position: absolute;
         top: 160px;
         width: 90px;
       }
-      #y_axis_div {
+      #y_axis_PS_div {
         position: absolute;
         top: 160px;
         width: 90px;
         left: 100px;
       }
-      .slidecontainer {
+      #slidecontainer_PS {
         position: absolute;
         top: 200px;
       }
       #formula_div {
         position: absolute;
-        top: 500px;
+        top: 550px;
+      }
+      
+      #resetZoomBtn_SS {
+        position: absolute;
+        top: 650px;
+      }
+      #resetReachBtn_SS {
+        position: absolute;
+        top: 680px;
+      }
+      #infoPanel_SS {
+        position: absolute;
+        top: 710px;
+        flex-grow: 1;
+      }
+      #x_axis_SS_div {
+        position: absolute;
+        top: 800px;
+        width: 90px;
+      }
+      #y_axis_SS_div {
+        position: absolute;
+        top: 800px;
+        width: 90px;
+        left: 100px;
+      }
+      #slidecontainer_SS {
+        position: absolute;
+        top: 840px;
       }
     </style>
     
@@ -166,35 +198,35 @@
   
   <body>
     <div class="widget_panel">
-      <button id="resetZoomBtn">Unzoom</button>
-      <button id="resetReachBtn">Deselect</button>
-      <textarea id="infoPanel" rows="${len(params)+2}" cols="35" wrap="off" disabled></textarea>
+      <button id="resetZoomBtn_PS">Unzoom</button>
+      <button id="resetReachBtn_PS">Deselect</button>
+      <textarea id="infoPanel_PS" rows="${len(params)+2}" cols="35" wrap="off" disabled></textarea>
       <!-- dynamicly adds sliders with labels for parameters and variables (if more than 2 vars are present) in mako style -->
-      <div id="x_axis_div">
+      <div id="x_axis_PS_div">
         X axis<br>
-        <select name="xAxis" id="x_axis" style="width:90px" required>
-          % for val in params:
-            % if val[0] == params[0][0]:
-              <option value="${val[0]}" selected>${val[0]}</option>
+        <select name="xAxis" id="x_axis_PS" style="width:90px" required>
+          % for val in [k[0] for k in params]+vars:
+            % if val == params[0][0]:
+              <option value="${val}" selected>${val}</option>
             % else:
-              <option value="${val[0]}">${val[0]}</option>
+              <option value="${val}">${val}</option>
             % endif
           % endfor
         </select>
       </div>
-      <div id="y_axis_div">
+      <div id="y_axis_PS_div">
         Y axis<br>
-        <select name="yAxis" id="y_axis" style="width:90px" required>
-          % for val in params:
-            % if len(params) > 1 and val[0] == params[1][0]:
-              <option value="${val[0]}" selected>${val[0]}</option>
+        <select name="yAxis" id="y_axis_PS" style="width:90px" required>
+          % for val in [k[0] for k in params]+vars:
+            % if len(params) > 1 and val == params[1][0]:
+              <option value="${val}" selected>${val}</option>
             % else:
-              <option value="${val[0]}">${val[0]}</option>
+              <option value="${val}">${val}</option>
             % endif
           % endfor
         </select>
       </div>
-      <div class="slidecontainer">
+      <div id="slidecontainer_PS">
       <hr>
       % for val in params:
         <% 
@@ -203,14 +235,14 @@
         step_val = abs(max_val-min_val)*0.001
         %>
         % if val[0] == params[0][0] or val[0] == params[1][0]:
-        <!--div id="slider_${val[0]}_wrapper" hidden-->
-        <div id="slider_${val[0]}_wrapper">
+        <!--div id="slider_PS_${val[0]}_wrapper" hidden-->
+        <div id="slider_PS_${val[0]}_wrapper">
         % else:
-        <div id="slider_${val[0]}_wrapper">
+        <div id="slider_PS_${val[0]}_wrapper">
         % endif
-          par. ${val[0]}: <span id="text_${val[0]}"></span><br>
-          <input type="range" min=${min_val} max=${max_val} value=${min_val} step=${step_val} class="slider" id="slider_${val[0]}">
-          <input type="checkbox" value="all" class="cb" id="checkbox_${val[0]}" checked>whole
+          par. ${val[0]}: <span id="text_PS_${val[0]}"></span><br>
+          <input type="range" min=${min_val} max=${max_val} value=${min_val} step=${step_val} class="slider" id="slider_PS_${val[0]}">
+          <input type="checkbox" value="all" class="cb" id="checkbox_PS_${val[0]}" checked>whole
         </div>
       % endfor
       <hr>
@@ -220,15 +252,14 @@
         max_val  = max(map(float,thrs[val]))
         step_val = abs(max_val-min_val)*0.01
         %>
-        <div id="slider_${val}_wrapper">
-          var. ${val}: <span id="text_${val}"></span><br>
-          <input type="range" min=${min_val} max=${max_val} value=${min_val} step=${step_val} class="slider" id="slider_${val}">
-          <input type="checkbox" value="all" class="cb" id="checkbox_${val}" checked>whole
+        <div id="slider_PS_${val}_wrapper">
+          var. ${val}: <span id="text_PS_${val}"></span><br>
+          <input type="range" min=${min_val} max=${max_val} value=${min_val} step=${step_val} class="slider" id="slider_PS_${val}">
+          <input type="checkbox" value="all" class="cb" id="checkbox_PS_${val}" checked>whole
         </div>
       % endfor
       </div>
       <div id="formula_div">
-        <hr>
         Property<br>
         <select id="formula" style="width:190px" required>
           % for key, val in enumerate(results.keys()):
@@ -246,125 +277,265 @@
             <option value="${key}">${key}</option>
           % endfor
         </select>
+        <hr>
+      </div>
+      <button id="resetZoomBtn_SS">Unzoom</button>
+      <button id="resetReachBtn_SS">Deselect</button>
+      <textarea id="infoPanel_SS" rows="${len(vars)+1}" cols="35" wrap="off" disabled></textarea>
+      <div id="x_axis_SS_div">
+        X axis<br>
+        <select name="xAxis" id="x_axis_SS" style="width:90px" required>
+          % for val in vars:
+            % if val == vars[0]:
+              <option value="${val}" selected>${val}</option>
+            % else:
+              <option value="${val}">${val}</option>
+            % endif
+          % endfor
+        </select>
+      </div>
+      <div id="y_axis_SS_div">
+        Y axis<br>
+        <select name="yAxis" id="y_axis_SS" style="width:90px" required>
+          % for val in vars:
+            % if len(vars) > 1 and val == vars[1]:
+              <option value="${val}" selected>${val}</option>
+            % else:
+              <option value="${val}">${val}</option>
+            % endif
+          % endfor
+        </select>
+      </div>
+      <div id="slidecontainer_SS">
+      <hr>
+      % if len(vars) > 2 :
+        % for val in vars:
+          <% 
+          min_val  = min(map(float,thrs[val]))
+          max_val  = max(map(float,thrs[val]))
+          step_val = abs(max_val-min_val)*0.01
+          %>
+          % if val == vars[0] or val == vars[1]:
+          <div id="slider_SS_${val}_wrapper" hidden>
+          % else:
+          <div id="slider_SS_${val}_wrapper">
+          % endif
+            var. ${val}: <span id="text_SS_${val}"></span><br>
+            <input type="range" min=${min_val} max=${max_val} value=${min_val} step=${step_val} class="slider" id="slider_SS_${val}">
+          </div>
+        % endfor
+      % endif
       </div>
     </div>
     
     <script type="text/javascript" charset="utf-8">
    
-var xDim = document.getElementById("x_axis").value,
-    yDim = document.getElementById("y_axis").value,
-    xDim_id = window.bio.params.findIndex(x => x[0] == xDim),
-    yDim_id = window.bio.params.findIndex(x => x[0] == yDim),
+var xDimPS = document.getElementById("x_axis_PS").value,
+    yDimPS = document.getElementById("y_axis_PS").value,
+    xDimPS_id = (window.bio.vars.includes(xDimPS) ? window.bio.vars.findIndex(x => x == xDimPS) : window.bio.params.findIndex(x => x[0] == xDimPS)),
+    yDimPS_id = (window.bio.vars.includes(yDimPS) ? window.bio.vars.findIndex(x => x == yDimPS) : window.bio.params.findIndex(x => x[0] == yDimPS)),
+    xDimSS = document.getElementById("x_axis_SS").value,
+    yDimSS = document.getElementById("y_axis_SS").value,
+    xDimSS_id = window.bio.vars.findIndex(x => x == xDimSS),
+    yDimSS_id = window.bio.vars.findIndex(x => x == yDimSS),
+    
     thrs = window.bio.thrs,
     formula = document.getElementById("formula").value,
     sel_result_data = window.result.map[formula],
-    sel_result_data_transposed = sel_result_data[0].map((col, i) => sel_result_data.map(row => row[i])),
-    param_bounds = [];
+    sel_result_data_transposed = (sel_result_data.length > 0 ? sel_result_data[0].map((col, i) => sel_result_data.map(row => row[i])) : []),
+    param_bounds = [],
+    var_bounds = [];
 
 // initial parametric bounds are not limited (projection through all parametric dimensions)
 window.bio.params.forEach(x => param_bounds.push(null));
+// initial bounds of variables are not limited (projection through all dimensions)
+window.bio.vars.forEach(x => var_bounds.push(null));
 
-// iteratively adds event listener for variable sliders (according to index)
-% for val in vars:
-    (function(i) {
-        d3.select("#text_"+i).html(d3.select("#slider_"+i).property("value"));
-        
-        d3.select("#slider_"+i).on("input", function() {
-            d3.select("#text_"+i).html(this.value);
-
-        });
-    })('${val}');
-% endfor
-
-// iteratively adds event listener for parameter sliders (according to index)
-% for key, val in enumerate(params):
+// iteratively adds event listener for variable sliders in PS (according to index)
+% for key, val in enumerate(vars):
     (function(i,d) {
-        d3.select("#text_"+d[0]).html(d3.select("#slider_"+d[0]).property("value"));
+        d3.select("#text_PS_"+d).html(d3.select("#slider_PS_"+d).property("value"));
         
-        d3.select("#slider_"+d[0]).on("input", function() {
-            d3.select("#text_"+d[0]).html(this.value);
-            if(! d3.select("#checkbox_"+d[0]).property("checked")) {
-                param_bounds[i] = Number(d3.select("#slider_"+d[0]).property("value"));
-                compute_projection();
-                draw();
+        d3.select("#slider_PS_"+d).on("input", function() {
+            d3.select("#text_PS_"+d).html(this.value);
+            if(! d3.select("#checkbox_PS_"+d).property("checked")) {
+                var_bounds[i] = Number(d3.select("#slider_PS_"+d).property("value"));
+                result_data_relevance()
+                compute_projection()
+                draw_PS()
+                compute_statedata()
+                draw_SS()
             }
         });
-        d3.select('#checkbox_'+d[0]).on("change", function() {
-            if(! d3.select("#checkbox_"+d[0]).property("checked")) {
-                param_bounds[i] = Number(d3.select("#slider_"+d[0]).property("value"));
+        d3.select('#checkbox_PS_'+d).on("change", function() {
+            if(! d3.select("#checkbox_PS_"+d).property("checked")) {
+                var_bounds[i] = Number(d3.select("#slider_PS_"+d).property("value"));
+            } else {
+                var_bounds[i] = null;
+            }
+            result_data_relevance()
+            compute_projection()
+            draw_PS()
+            compute_statedata()
+            draw_SS()
+        });
+    })(${key},"${val}");
+% endfor
+
+// iteratively adds event listener for parameter sliders in PS (according to index)
+% for key, val in enumerate(params):
+    (function(i,d) {
+        d3.select("#text_PS_"+d[0]).html(d3.select("#slider_PS_"+d[0]).property("value"));
+        
+        d3.select("#slider_PS_"+d[0]).on("input", function() {
+            d3.select("#text_PS_"+d[0]).html(this.value);
+            if(! d3.select("#checkbox_PS_"+d[0]).property("checked")) {
+                param_bounds[i] = Number(d3.select("#slider_PS_"+d[0]).property("value"));
+                compute_projection()
+                draw_PS()
+            }
+        });
+        d3.select('#checkbox_PS_'+d[0]).on("change", function() {
+            if(! d3.select("#checkbox_PS_"+d[0]).property("checked")) {
+                param_bounds[i] = Number(d3.select("#slider_PS_"+d[0]).property("value"));
             } else {
                 param_bounds[i] = null;
             }
-            compute_projection();
-            draw();
+            compute_projection()
+            draw_PS()
         });
     })(${key},${val});
 % endfor
-  
-// event listener for change of selectected dimension for X axis
-d3.select("#x_axis").on("change", function() {
-  var other = d3.select("#y_axis").property("value");
-  if(this.value == other) {
-    d3.select("#y_axis").property('value',xDim);
-    yDim = xDim;
-  } else {
-//    d3.select("#slider_"+xDim+"_wrapper").attr("hidden",null);
-  }
-  xDim = this.value;
-//  d3.select("#slider_"+this.value+"_wrapper").attr("hidden","hidden");
-  xDim_id = window.bio.params.findIndex(x => x[0] == xDim);
-  yDim_id = window.bio.params.findIndex(x => x[0] == yDim);
 
-  resettedZoom();
-  compute_projection();
-  draw();
+// iteratively adds event listener for variable sliders in SS (according to index)
+% if len(vars) > 2:
+  % for key, val in enumerate(vars):
+      (function(i,d) {
+          d3.select("#text_SS_"+d).html(d3.select("#slider_SS_"+d).property("value"));
+          
+          d3.select("#slider_SS_"+d).on("input", function() {
+              d3.select("#text_SS_"+d).html(this.value);
+              
+              compute_statedata()
+              draw_SS()
+          })
+      })(${key},"${val}");
+  % endfor
+% endif
+  
+// event listener for change of selectected dimension for X axis in PS
+d3.select("#x_axis_PS").on("change", function() {
+  var other = d3.select("#y_axis_PS").property("value");
+  if(this.value == other) {
+    d3.select("#y_axis_PS").property('value',xDimPS);
+    yDimPS = xDimPS;
+  } else {
+//    d3.select("#slider_"+xDimPS+"_wrapper").attr("hidden",null);
+  }
+  xDimPS = this.value;
+//  d3.select("#slider_"+this.value+"_wrapper").attr("hidden","hidden");
+  if(window.bio.vars.includes(xDimPS))  xDimPS_id = window.bio.vars.findIndex(x => x == xDimPS);
+  else                                  xDimPS_id = window.bio.params.findIndex(x => x[0] == xDimPS);
+  if(window.bio.vars.includes(yDimPS))  yDimPS_id = window.bio.vars.findIndex(x => x == yDimPS);
+  else                                  yDimPS_id = window.bio.params.findIndex(x => x[0] == yDimPS);
+
+  resettedZoom_PS()
+  result_data_relevance()
+  compute_projection()
+  draw_PS()
 });
 
-// event listener for change of selectected dimension for Y axis
-d3.select("#y_axis").on("change", function() {
-  var other = d3.select("#x_axis").property("value");
+// event listener for change of selectected dimension for Y axis in PS
+d3.select("#y_axis_PS").on("change", function() {
+  var other = d3.select("#x_axis_PS").property("value");
   if(this.value == other) {
-    d3.select("#x_axis").property('value',yDim);
-    xDim = yDim;
+    d3.select("#x_axis_PS").property('value',yDimPS);
+    xDimPS = yDimPS;
   } else {
-//    d3.select("#slider_"+yDim+"_wrapper").attr("hidden",null);
+//    d3.select("#slider_PS_"+yDimPS+"_wrapper").attr("hidden",null);
   }
-  yDim = this.value;
-//  d3.select("#slider_"+this.value+"_wrapper").attr("hidden","hidden");
-  xDim_id = window.bio.params.findIndex(x => x[0] == xDim);
-  yDim_id = window.bio.params.findIndex(x => x[0] == yDim);
+  yDimPS = this.value;
+//  d3.select("#slider_PS_"+this.value+"_wrapper").attr("hidden","hidden");
+  if(window.bio.vars.includes(xDimPS))  xDimPS_id = window.bio.vars.findIndex(x => x == xDimPS);
+  else                                  xDimPS_id = window.bio.params.findIndex(x => x[0] == xDimPS);
+  if(window.bio.vars.includes(yDimPS))  yDimPS_id = window.bio.vars.findIndex(x => x == yDimPS);
+  else                                  yDimPS_id = window.bio.params.findIndex(x => x[0] == yDimPS);
 
-  resettedZoom();
-  compute_projection();
-  draw();
+  resettedZoom_PS()
+  result_data_relevance()
+  compute_projection()
+  draw_PS()
+});
+
+// event listener for change of selectected dimension for X axis in SS
+d3.select("#x_axis_SS").on("change", function() {
+  var other = d3.select("#y_axis_SS").property("value");
+  if(this.value == other) {
+    d3.select("#y_axis_SS").property('value',xDimSS);
+    yDimSS = xDimSS;
+  } else {
+    d3.select("#slider_SS_"+xDimSS+"_wrapper").attr("hidden",null);
+  }
+  xDimSS = this.value;
+  d3.select("#slider_SS_"+this.value+"_wrapper").attr("hidden","hidden");
+  
+  xDimSS_id = window.bio.vars.findIndex(x => x == xDimSS)
+  yDimSS_id = window.bio.vars.findIndex(x => x == yDimSS)
+
+  resettedZoom_SS()
+  compute_statedata()
+  draw_SS()
+});
+// event listener for change of selectected dimension for Y axis in SS
+d3.select("#y_axis_SS").on("change", function() {
+  var other = d3.select("#x_axis_SS").property("value");
+  if(this.value == other) {
+    d3.select("#x_axis_SS").property('value',yDimSS);
+    xDimSS = yDimSS;
+  } else {
+    d3.select("#slider_SS_"+yDimSS+"_wrapper").attr("hidden",null);
+  }
+  yDimSS = this.value;
+  d3.select("#slider_SS_"+this.value+"_wrapper").attr("hidden","hidden");
+
+  xDimSS_id = window.bio.vars.findIndex(x => x == xDimSS)
+  yDimSS_id = window.bio.vars.findIndex(x => x == yDimSS)
+
+  resettedZoom_SS()
+  compute_statedata()
+  draw_SS()
 });
 
 d3.select("#formula").on("change", function() {
   formula = d3.select("#formula").property("value");
     
-  sel_result_data = window.result.map[formula];
-  sel_result_data_transposed = sel_result_data.length > 0 ? sel_result_data[0].map((col, i) => sel_result_data.map(row => row[i])) : [];
-  
-  compute_projection();
-  draw();
+  result_data_relevance()
+  compute_projection()
+  draw_PS()
+  compute_statedata()
+  draw_SS()
 });
 
 d3.select("#param_id").on("change", function() {
   
-  compute_projection();
-  draw();
-});
+  compute_projection()
+  draw_PS()
+})
 
-d3.select('#resetReachBtn')
-    .on("click", resettedClick);
+d3.select('#resetReachBtn_PS')
+    .on("click", resettedClick_PS);
+d3.select('#resetReachBtn_SS')
+    .on("click", resettedClick_SS);
 
-d3.select('#resetZoomBtn')
-    .on("click", resettedZoom);
+d3.select('#resetZoomBtn_PS')
+    .on("click", resettedZoom_PS);
+d3.select('#resetZoomBtn_SS')
+    .on("click", resettedZoom_SS);
     
 //###################################################    
 
 var width = 550,
-    height = 550,
+    height = 450,
     margin = { top: 10, right: 10, bottom: 50, left: 50 },
     arrowlen = 7,
     color = "transparent",
@@ -377,7 +548,10 @@ var width = 550,
     transWidth = 2,
     selfloopWidth = 4,
     projdata = [],
-    zoomObject = d3.zoomIdentity;
+    statedata = [],
+    selectedStates = [],
+    zoomObject_PS = d3.zoomIdentity,
+    zoomObject_SS = d3.zoomIdentity;
 
 // trans example = {
 //   0:[0,1],
@@ -386,97 +560,202 @@ var width = 550,
 //   3:[3]
 // };
 
-var xScale = d3.scaleLinear()
-  .domain([d3.min(thrs[xDim],parseFloat),
-           d3.max(thrs[xDim],parseFloat)])
-  .range([margin.left, width - margin.right]);
+var xScalePS = d3.scaleLinear()
+      .domain([d3.min(thrs[xDimPS],parseFloat),
+               d3.max(thrs[xDimPS],parseFloat)])
+      .range([margin.left, width - margin.right]),
+    xScaleSS = d3.scaleLinear()
+      .domain([d3.min(thrs[xDimSS],parseFloat),
+               d3.max(thrs[xDimSS],parseFloat)])
+      .range([margin.left, width - margin.right])
 
-var yScale = d3.scaleLinear()
-  .domain([d3.min(thrs[yDim],parseFloat),
-           d3.max(thrs[yDim],parseFloat)])
-  .range([height - margin.bottom, margin.top]);
-
-var brushX = d3.brushX()
+var yScalePS = d3.scaleLinear()
+      .domain([d3.min(thrs[yDimPS],parseFloat),
+               d3.max(thrs[yDimPS],parseFloat)])
+      .range([height - margin.bottom, margin.top]),
+    yScaleSS = d3.scaleLinear()
+      .domain([d3.min(thrs[yDimSS],parseFloat),
+               d3.max(thrs[yDimSS],parseFloat)])
+      .range([height - margin.bottom, margin.top])
+      
+var brushXPS = d3.brushX()
     .extent([[margin.left, 0], [width-margin.right, margin.bottom]])
-    .on("end", brushedX),
+    .on("end", brushedX_PS),
     
-    brushY = d3.brushY()
+    brushYPS = d3.brushY()
     .extent([[-margin.left, margin.top], [0, height-margin.bottom]])
-    .on("end", brushedY);
+    .on("end", brushedY_PS),
+    
+    brushXSS = d3.brushX()
+    .extent([[margin.left, 0], [width-margin.right, margin.bottom]])
+    .on("end", brushedX_SS),
+    
+    brushYSS = d3.brushY()
+    .extent([[-margin.left, margin.top], [0, height-margin.bottom]])
+    .on("end", brushedY_SS)
 
-var zoom = d3.zoom()
+var zoomPS = d3.zoom()
           //.scaleExtent([1, Infinity])
           //.translateExtent([[0,0],[width,height]])
-          .on("zoom", zoomed);
-var svg = d3.select("body").append("svg")
-    .attr("width", width)
-    .attr("height", height);
+          .on("zoom", zoomed_PS),
+    zoomSS = d3.zoom()
+          //.scaleExtent([1, Infinity])
+          //.translateExtent([[0,0],[width,height]])
+          .on("zoom", zoomed_SS)
+          
+var svgPS = d3.select("body").append("svg")
+      .attr("width", width)
+      .attr("height", height),
+    svgSS = d3.select("body").append("svg")
+      .attr("width", width)
+      .attr("height", height)
 
-var container = svg.append("g")
-        .attr("id","cont")
+var containerPS = svgPS.append("g")
+        .attr("class", "containers")
+        .attr("id","cont_ps")
         //.attr("transform", "translate("+(margin.left)+","+(margin.top)+")")
-        .call(zoom);
+        .call(zoomPS),
+    containerSS = svgSS.append("g")
+        .attr("class", "containers")
+        .attr("id","cont_ss")
+        //.attr("transform", "translate("+(margin.left)+","+(margin.top)+")")
+        .call(zoomSS)
 
-var xLabel = svg.append("text")
-    .attr("id", "xlabel")
-    .attr("class", "label")
-    .attr("x", width*0.5)
-    .attr("y", height-10)
-    .attr("stroke", "black")
-    .text(function() { return xDim; });
-var yLabel = svg.append("text")
-    .attr("id", "ylabel")
-    .attr("class", "label")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -width*0.5)
-    .attr("y", 15)
-    .attr("stroke", "black")
-    .text(function() { return yDim; });
+var xLabelPS = svgPS.append("text")
+      .attr("id", "xLabelPS")
+      .attr("class", "label")
+      .attr("x", width*0.5)
+      .attr("y", height-10)
+      .attr("stroke", "black")
+      .text(function() { return xDimPS; }),
+    xLabelSS = svgSS.append("text")
+      .attr("id", "xlabelSS")
+      .attr("class", "label")
+      .attr("x", width*0.5)
+      .attr("y", height-10)
+      .attr("stroke", "black")
+      .text(function() { return xDimSS; })
+var yLabelPS = svgPS.append("text")
+      .attr("id", "yLabelPS")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("x", -height*0.5)
+      .attr("y", 15)
+      .attr("stroke", "black")
+      .text(function() { return yDimPS; }),
+    yLabelSS = svgSS.append("text")
+      .attr("id", "yLabelSS")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("x", -height*0.5)
+      .attr("y", 15)
+      .attr("stroke", "black")
+      .text(function() { return yDimSS; })
 
-var bottomPanel = svg.append("g")
-    .attr("id", "bPanel")
+var bottomPanelPS = svgPS.append("g")
+    .attr("id", "bPanelPS")
     .attr("class", "panel")
     .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")");
-    
-var xAxis = d3.axisBottom(xScale);
-var gX = bottomPanel.append("g")
-    .attr("id", "xAxis")
+var xAxisPS = d3.axisBottom(xScalePS);
+var gXPS = bottomPanelPS.append("g")
+    .attr("id", "xAxisPS")
     .attr("class", "axis")
-    .call(xAxis); // Create an axis component with d3.axisBottom
-var gBX = bottomPanel.append("g")
-    .attr("id", "xBrush")
+    .call(xAxisPS); // Create an axis component with d3.axisBottom
+var gBXPS = bottomPanelPS.append("g")
+    .attr("id", "xBrushPS")
     .attr("class", "brush")
-    .call(brushX);
+    .call(brushXPS);
     
-var leftPanel = svg.append("g")
-    .attr("id", "lPanel")
+var leftPanelPS = svgPS.append("g")
+    .attr("id", "lPanelPS")
     .attr("class", "panel")
-    .attr("transform", "translate("+margin.left+","+0+")");
-
-var yAxis = d3.axisLeft(yScale);
-var gY = leftPanel.append("g")
-    .attr("id", "yAxis")
+    .attr("transform", "translate("+(margin.left)+","+(0)+")");
+var yAxisPS = d3.axisLeft(yScalePS);
+var gYPS = leftPanelPS.append("g")
+    .attr("id", "yAxisPS")
     .attr("class", "axis")
-    .call(yAxis); // Create an axis component with d3.axisLeft
-var gBY = leftPanel.append("g")
-    .attr("id", "xBrush")
+    .call(yAxisPS); // Create an axis component with d3.axisLeft
+var gBYPS = leftPanelPS.append("g")
+    .attr("id", "xBrushPS")
     .attr("class", "brush")
-    .call(brushY);
+    .call(brushYPS);
 
-compute_projection();
-draw();
+var bottomPanelSS = svgSS.append("g")
+    .attr("id", "bPanelSS")
+    .attr("class", "panel")
+    .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")");
+var xAxisSS = d3.axisBottom(xScaleSS);
+var gXSS = bottomPanelSS.append("g")
+    .attr("id", "xAxisSS")
+    .attr("class", "axis")
+    .call(xAxisSS); // Create an axis component with d3.axisBottom
+var gBXSS = bottomPanelSS.append("g")
+    .attr("id", "xBrushSS")
+    .attr("class", "brush")
+    .call(brushXSS);
+    
+var leftPanelSS = svgSS.append("g")
+    .attr("id", "lPanelSS")
+    .attr("class", "panel")
+    .attr("transform", "translate("+(margin.left)+","+(0)+")");
+var yAxisSS = d3.axisLeft(yScaleSS);
+var gYSS = leftPanelSS.append("g")
+    .attr("id", "yAxisSS")
+    .attr("class", "axis")
+    .call(yAxisSS); // Create an axis component with d3.axisLeft
+var gBYSS = leftPanelSS.append("g")
+    .attr("id", "xBrushSS")
+    .attr("class", "brush")
+    .call(brushYSS);
+
+result_data_relevance()
+compute_projection()
+draw_PS()
+
+compute_statedata()
+draw_SS()
 
 // ################# definitions of functions #################
+
+function result_data_relevance() {
+  sel_result_data = window.result.map[formula];
+  
+  var data = []
+  for(var r=0, len=sel_result_data.length; r<len; ++r) {
+    var sid = Number(sel_result_data[r][0])
+    var pid = Number(sel_result_data[r][1])
+    
+    var shown = (selectedStates.length == 0 ? true : selectedStates.includes(sid))
+    var vid = 0
+    while(shown && vid < var_bounds.length) {
+      const bound = var_bounds[vid]
+      if(bound !== null && (d3.min(window.result.states[sid][vid]) > bound || d3.max(window.result.states[sid][vid]) < bound)) shown = false
+      vid++
+    }
+    if(shown) data.push([sid,pid])
+  }
+  sel_result_data = data
+  sel_result_data_transposed = (sel_result_data.length > 0 ? sel_result_data[0].map((col, i) => sel_result_data.map(row => row[i])) : [])
+}
     
 function compute_projection() {
   projdata = [];
+  var state_ids = [],
+      param_ids = [],
+      param_sets = [];
 
   if (sel_result_data_transposed.length > 0) {
-    //var param_ids = sel_result_data_transposed[1];
-    var param_ids = [...new Set(sel_result_data_transposed[1])]
-    var param_sets = param_ids.map(x => window.result.params[x])
+    if (window.bio.vars.includes(xDimPS) || window.bio.vars.includes(yDimPS)) {
+      state_ids = sel_result_data_transposed[0]
+      param_ids = sel_result_data_transposed[1]
+      param_sets = param_ids.map(x => window.result.params[x])
+    } else {
+      param_ids = [...new Set(sel_result_data_transposed[1])]
+      param_sets = param_ids.map(x => window.result.params[x])
+    }
     
     if(d3.select("#param_id").property("value") == "all") {
+      
       for(var p=0, len=param_sets.length; p<len; ++p) {
         const param_id = param_ids[p];
         const param_set = param_sets[p];
@@ -491,15 +770,15 @@ function compute_projection() {
             par_id++;
           }
           if(shown) data.push({
-            x: interval[xDim_id],
-            y: interval[yDim_id],
+            x: (window.bio.vars.includes(xDimPS) ? window.result.states[state_ids[p]][xDimPS_id] : interval[xDimPS_id]),
+            y: (window.bio.vars.includes(yDimPS) ? window.result.states[state_ids[p]][yDimPS_id] : interval[yDimPS_id])
           })
         }
         if(data.length > 0) {
           projdata.push({
             "data": data,
-            "id": param_id,
-            "cov": sel_result_data_transposed[1].filter( x => x == param_id ).length
+            "id": (window.bio.vars.includes(xDimPS) || window.bio.vars.includes(yDimPS) ? state_ids[p]+"-"+param_id : param_id),
+            "cov": (window.bio.vars.includes(xDimPS) || window.bio.vars.includes(yDimPS) ? 1 : sel_result_data_transposed[1].filter( x => x == param_id ).length)
           })
         }
       }
@@ -518,53 +797,165 @@ function compute_projection() {
           par_id++;
         }
         if(shown) data.push({
-          x: interval[xDim_id],
-          y: interval[yDim_id],
+          x: interval[xDimPS_id],
+          y: interval[yDimPS_id],
         })
       }
       if(data.length > 0) {
         projdata.push({
           "data": data,
-          "id": p,
-          "cov": sel_result_data_transposed[1].filter( x => x == p ).length
+          "id"  : p,
+          "cov" : sel_result_data_transposed[1].filter( x => x == p ).length
         })
       }
     }
   }
-  console.log(projdata);
+  //console.log(projdata);
 }
-
-function update_axes() {
+function compute_statedata() {
+  statedata = []
+  const vars = window.bio.vars.filter(x => x != xDimSS && x != yDimSS)
+  var state_ids = [...new Set(sel_result_data_transposed[0])]
+  window.state_ids = state_ids
+  
+  for(var i=0, len=Object.values(window.result.states).length; i < len; ++i) {
+    var id    = Number(Object.entries(window.result.states)[i][0])
+    var state = Object.entries(window.result.states)[i][1]
+    
+    var shown = true
+    var v = 0
+    while(shown && v < vars.length) {
+      const var_id = window.bio.vars.indexOf(vars[v])
+      const thr = Number(d3.select("#slider_SS_"+vars[v]).property("value"))
+      if(state[var_id][0] > thr || state[var_id][1] < thr) shown = false
+      v++
+    }
+    
+    if(shown) statedata.push({
+      "x" : state[xDimSS_id][0],
+      "y" : state[yDimSS_id][1],
+      "x1": state[xDimSS_id][1],
+      "y1": state[yDimSS_id][0],
+      "id": id,
+      "color": (state_ids.includes(id) ? reachColor : color)
+    })
+  }
+}
+//######### SS part for zooming ############
+function update_axes_SS() {
   // Update axes labels according to selected diemnsions
-  d3.select('#xlabel').text(xDim);
-  d3.select('#ylabel').text(yDim);
+  d3.select('#xLabelSS').text(xDimSS);
+  d3.select('#yLabelSS').text(yDimSS);
   // Update scales according to selected diemnsions
-  xScale.domain([d3.min(thrs[xDim],parseFloat),
-                 d3.max(thrs[xDim],parseFloat)])
+  xScaleSS.domain([d3.min(thrs[xDimSS],parseFloat),
+                   d3.max(thrs[xDimSS],parseFloat)])
 
-  yScale.domain([d3.min(thrs[yDim],parseFloat),
-                 d3.max(thrs[yDim],parseFloat)])
+  yScaleSS.domain([d3.min(thrs[yDimSS],parseFloat),
+                   d3.max(thrs[yDimSS],parseFloat)])
   // Update an axis component according to selected dimensions
-  xAxis = d3.axisBottom(xScale);
-  gX.call(xAxis);
-  yAxis = d3.axisLeft(yScale);
-  gY.call(yAxis);
+  xAxisSS = d3.axisBottom(xScaleSS);
+  gXSS.call(xAxisSS);
+  yAxisSS = d3.axisLeft(yScaleSS);
+  gYSS.call(yAxisSS);
   // reset brushes
-  gBX.call(brushX.move, null);
-  gBY.call(brushY.move, null);
+  gBXSS.call(brushXSS.move, null);
+  gBYSS.call(brushYSS.move, null);
 }
-function resettedClick() {
+function resettedClick_SS() {
+  selectedStates = []
+  
+  result_data_relevance()
+  compute_projection()
+  draw_PS()
+  compute_statedata()
+  draw_SS()
 }
-function resettedZoom() {
-  update_axes()
-  container.transition()
+function resettedZoom_SS() {
+  update_axes_SS()
+  containerSS.transition()
       .duration(500)
-      .call(zoom.transform, d3.zoomIdentity);
+      .call(zoomSS.transform, d3.zoomIdentity);
 }
-function zoomed() {
-  if(d3.event.transform) zoomObject = d3.event.transform;
-  x = zoomObject.rescaleX(xScale);
-  y = zoomObject.rescaleY(yScale);
+function zoomed_SS() {
+  if(d3.event.transform) zoomObject_SS = d3.event.transform;
+  x = zoomObject_SS.rescaleX(xScaleSS);
+  y = zoomObject_SS.rescaleY(yScaleSS);
+  
+  d3.selectAll(".states")
+    .attr("x", d => x(d.x))
+    .attr("y", d => y(d.y))
+    .attr("width", d => x(d.x1)-x(d.x))
+    .attr("height", d => y(d.y1)-y(d.y))
+  
+  gXSS.call(xAxisSS.scale(x));
+  gYSS.call(yAxisSS.scale(y));
+  // reset brushes
+  gBXSS.call(brushXSS.move, null);
+  gBYSS.call(brushYSS.move, null);
+}
+function brushedX_SS() {
+  if (!d3.event.sourceEvent) return; // Only transition after input.
+  if (!d3.event.selection) return; // Ignore empty selections.
+  var sel = d3.event.selection;
+  var domain = sel.map(xAxisSS.scale().invert);
+  
+  scale = xScaleSS.copy().domain(domain);
+  range = scale.range().map(x => zoomObject_SS.applyX(x));
+  domain = range.map(scale.invert);
+  xScaleSS.domain(domain);
+  
+  zoomed_SS();
+}
+function brushedY_SS() {
+  if (!d3.event.sourceEvent) return; // Only transition after input.
+  if (!d3.event.selection) return; // Ignore empty selections.
+  var sel = d3.event.selection;
+  var domain = sel.map(yAxisSS.scale().invert);
+  
+  scale = yScaleSS.copy().domain(domain.reverse());
+  range = scale.range().map(y => zoomObject_SS.applyY(y));
+  domain = range.map(scale.invert);
+  yScaleSS.domain(domain);
+  
+  zoomed_SS();
+}
+
+//######### PS part for zooming ############
+function update_axes_PS() {
+  // Update axes labels according to selected diemnsions
+  d3.select('#xLabelPS').text(xDimPS);
+  d3.select('#yLabelPS').text(yDimPS);
+  // Update scales according to selected diemnsions
+  xScalePS.domain([d3.min(thrs[xDimPS],parseFloat),
+                   d3.max(thrs[xDimPS],parseFloat)])
+
+  yScalePS.domain([d3.min(thrs[yDimPS],parseFloat),
+                   d3.max(thrs[yDimPS],parseFloat)])
+  // Update an axis component according to selected dimensions
+  xAxisPS = d3.axisBottom(xScalePS);
+  gXPS.call(xAxisPS);
+  yAxisPS = d3.axisLeft(yScalePS);
+  gYPS.call(yAxisPS);
+  // reset brushes
+  gBXPS.call(brushXPS.move, null);
+  gBYPS.call(brushYPS.move, null);
+}
+function resettedClick_PS() {
+  compute_projection()
+  draw_PS()
+  compute_statedata()
+  draw_SS()
+}
+function resettedZoom_PS() {
+  update_axes_PS()
+  containerPS.transition()
+      .duration(500)
+      .call(zoomPS.transform, d3.zoomIdentity);
+}
+function zoomed_PS() {
+  if(d3.event.transform) zoomObject_PS = d3.event.transform;
+  x = zoomObject_PS.rescaleX(xScalePS);
+  y = zoomObject_PS.rescaleY(yScalePS);
   
   d3.selectAll(".interval")
   .attr("d", d => {
@@ -576,47 +967,45 @@ function zoomed() {
     return path;
   })
   
-  gX.call(xAxis.scale(x));
-  gY.call(yAxis.scale(y));
+  gXPS.call(xAxisPS.scale(x));
+  gYPS.call(yAxisPS.scale(y));
   // reset brushes
-  gBX.call(brushX.move, null);
-  gBY.call(brushY.move, null);
+  gBXPS.call(brushXPS.move, null);
+  gBYPS.call(brushYPS.move, null);
 }
-function brushedX() {
+function brushedX_PS() {
   if (!d3.event.sourceEvent) return; // Only transition after input.
   if (!d3.event.selection) return; // Ignore empty selections.
   var sel = d3.event.selection;
-  var domain = sel.map(xAxis.scale().invert);
+  var domain = sel.map(xAxisPS.scale().invert);
   // TODO: set up brush.move for scale over some threshold (similar to zoom.scaleExtent([1, 100000]) ) to force it to resize along that threshold
   // TODO: implement own control over zoom extent because with embeded functions either it's not possible to move or unzoome after brush or
   //       it's possible to zoom out into a point
   
-  scale = xScale.copy().domain(domain);
-  range = scale.range().map(x => zoomObject.applyX(x));
+  scale = xScalePS.copy().domain(domain);
+  range = scale.range().map(x => zoomObject_PS.applyX(x));
   domain = range.map(scale.invert);
-  xScale.domain(domain);
+  xScalePS.domain(domain);
   
-  zoomed();
+  zoomed_PS();
 }
-function brushedY() {
+function brushedY_PS() {
   if (!d3.event.sourceEvent) return; // Only transition after input.
   if (!d3.event.selection) return; // Ignore empty selections.
   var sel = d3.event.selection;
-  var domain = sel.map(yAxis.scale().invert);
+  var domain = sel.map(yAxisPS.scale().invert);
   
-  scale = yScale.copy().domain(domain.reverse());
-  range = scale.range().map(y => zoomObject.applyY(y));
+  scale = yScalePS.copy().domain(domain.reverse());
+  range = scale.range().map(y => zoomObject_PS.applyY(y));
   domain = range.map(scale.invert);
-  yScale.domain(domain);
+  yScalePS.domain(domain);
   
-  zoomed();
+  zoomed_PS();
 }
-function fill_info_panel(d) {
-}
-function handleMouseOver(d, i) {
-  var div = document.getElementById("infoPanel");
+function handleMouseOver_PS(d, i) {
+  var div = document.getElementById("infoPanel_PS");
   var mouse = d3.mouse(this);
-  mouse = [zoomObject.rescaleX(xScale).invert(mouse[0]), zoomObject.rescaleY(yScale).invert(mouse[1])];
+  mouse = [zoomObject_PS.rescaleX(xScalePS).invert(mouse[0]), zoomObject_PS.rescaleY(yScalePS).invert(mouse[1])];
   var p_count = 0,
       s_count = 0,
       content = "";
@@ -639,18 +1028,16 @@ function handleMouseOver(d, i) {
   content += "\nParametrisations covered: "+p_count;
   for(var v = 0, len = window.bio.params.length; v < len; ++v) {
     var key = window.bio.params[v];
-    content += "\n"+key[0]+": "+(key[0] == xDim ? mouse[0].toFixed(4) : 
-                                  (key[0] == yDim ? mouse[1].toFixed(4) : 
-                                    (d3.select("#checkbox_"+key[0]).property("checked") ? "["+key[1]+"-"+key[2]+"]" :
-                                      d3.select("#slider_"+key[0]).property("value"))));
+    content += "\n"+key[0]+": "+(key[0] == xDimPS ? mouse[0].toFixed(4) : 
+                                  (key[0] == yDimPS ? mouse[1].toFixed(4) : 
+                                    (d3.select("#checkbox_PS_"+key[0]).property("checked") ? "["+key[1]+"-"+key[2]+"]" :
+                                      d3.select("#slider_PS_"+key[0]).property("value"))));
   }
   
   div.value = content;
 }
-function fill_info_panel_outside() {
-}
-function handleMouseOut(d, i) {
-  var div = document.getElementById("infoPanel");
+function handleMouseOut_PS(d, i) {
+  var div = document.getElementById("infoPanel_PS");
   var p_count = 0,
       s_count = 0,
       content = "";
@@ -659,38 +1046,83 @@ function handleMouseOut(d, i) {
   content += "\nParametrisations covered: "+p_count;
   for(var v = 0, len = window.bio.params.length; v < len; ++v) {
     var key = window.bio.params[v];
-    content += "\n"+key[0]+": "+(key[0] == xDim ? "["+zoomObject.rescaleX(xScale).domain()[0].toFixed(4)+"-"+zoomObject.rescaleX(xScale).domain()[1].toFixed(4)+"]" : 
-                                  (key[0] == yDim ? "["+zoomObject.rescaleY(yScale).domain()[0].toFixed(4)+"-"+zoomObject.rescaleY(yScale).domain()[1].toFixed(4)+"]" : 
-                                    (d3.select("#checkbox_"+key[0]).property("checked") ? "["+key[1]+"-"+key[2]+"]" :
-                                      d3.select("#slider_"+key[0]).property("value"))));
+    content += "\n"+key[0]+": "+(key[0] == xDimPS ? "["+zoomObject_PS.rescaleX(xScalePS).domain()[0].toFixed(4)+"-"+zoomObject_PS.rescaleX(xScalePS).domain()[1].toFixed(4)+"]" : 
+                                  (key[0] == yDimPS ? "["+zoomObject_PS.rescaleY(yScalePS).domain()[0].toFixed(4)+"-"+zoomObject_PS.rescaleY(yScalePS).domain()[1].toFixed(4)+"]" : 
+                                    (d3.select("#checkbox_PS_"+key[0]).property("checked") ? "["+key[1]+"-"+key[2]+"]" :
+                                      d3.select("#slider_PS_"+key[0]).property("value"))));
   }
   
   div.value = content;
 }
-function handleMouseClick(d, i) {
+function handleMouseClick_PS(d, i) {
+  var mouse = d3.mouse(this)
+  mouse = [Number(zoomObject_PS.rescaleX(xScalePS).invert(mouse[0])), Number(zoomObject_PS.rescaleY(yScalePS).invert(mouse[1]))]
+  console.log(mouse[0]+" x "+mouse[1])
+  //console.log(i+":"+d.id)
   
-  d3.select("#zoomField").moveUp();
+  var sel = d3.selectAll(".interval")
+    .filter(x => {
+      for(var i=0, len=x.data.length; i<len; ++i) {
+        var r = x.data[i];
+        // Y scale is inverted, therefore, we use the the higher threshold as the first one and the lower threshold as the second one
+        if(mouse[0] > Number(r.x[0]) && mouse[0] < Number(r.x[1]) && mouse[1] > Number(r.y[1]) && mouse[1] < Number(r.y[0])) {
+          return true
+        }
+      }
+      return false
+    }).remove()
+  console.log(sel)
+    
+  //containerPS.selectAll(".interval").remove()
+  //containerPS.selectAll(".interval").merge(sel)
+  
+  //d3.select("#zoomField_PS").moveUp();
 }
 
-function draw() {
-  container.select("#zoomField").remove();
-  container.selectAll(".interval").remove();
+function handleMouseOver_SS(d, i) {
+  var div = document.getElementById("infoPanel_SS");
+  var content = "";
+    d3.select(this).attr("stroke-width", hoverStrokeWidth);
   
-  container.append("rect")
-    .attr("id", "zoomField")
+  content = ""+d3.select(this).attr("id")
+  
+  div.value = content;
+}
+function handleMouseOut_SS(d, i) {
+    d3.select(this).attr("stroke-width", normalStrokeWidth);
+}
+function handleMouseClick_SS(d, i) {
+  if(!selectedStates.includes(d.id)) {
+    selectedStates.push(d.id)
+  } else {
+    selectedStates = selectedStates.filter(x => x != d.id)
+  }
+  result_data_relevance()
+  compute_projection()
+  draw_PS()
+  compute_statedata()
+  draw_SS()
+}
+
+function draw_PS() {
+  containerPS.select("#zoomField_PS").remove()
+  containerPS.selectAll(".interval").remove()
+  
+  containerPS.append("rect")
+    .attr("id", "zoomField_PS")
     .attr("x", margin.left)
     .attr("y", margin.top)
     .attr("width", width-margin.right-margin.left)
     .attr("height", height-margin.bottom-margin.top)
     .attr("fill", "none")
-    .on("click", handleMouseClick)
-    .on("mousemove", handleMouseOver)
-    .on("mouseout", handleMouseOut);
+    .on("click", handleMouseClick_PS)
+    .on("mousemove", handleMouseOver_PS)
+    .on("mouseout", handleMouseOut_PS);
   
-  var max_cov = d3.sum(projdata.map(x => x.cov));
-  console.log("# "+(projdata.length)+", max coverage: "+max_cov);
+  var cov_range = projdata.map(x => x.cov)
+  opScale = d3.scaleLinear().domain([d3.min(cov_range),d3.max(cov_range)]).range([0.1,1]);
   
-  container.selectAll(".interval")
+  containerPS.selectAll(".interval")
     .data(projdata)
     .enter()
     .append("path")
@@ -701,18 +1133,52 @@ function draw() {
       for(var i=0, len=d.data.length; i<len; ++i) {
         var r = d.data[i];
         // Y scale is inverted, therefore, we use the the higher threshold as the first one and the lower threshold as the second one
-        path += " M"+zoomObject.rescaleX(xScale)(r.x[0])+","+zoomObject.rescaleY(yScale)(r.y[1])+" H"+zoomObject.rescaleX(xScale)(r.x[1])+" V"+zoomObject.rescaleY(yScale)(r.y[0])+" H"+zoomObject.rescaleX(xScale)(r.x[0])
+        path += " M"+zoomObject_PS.rescaleX(xScalePS)(r.x[0])+","+zoomObject_PS.rescaleY(yScalePS)(r.y[1])+" H"+zoomObject_PS.rescaleX(xScalePS)(r.x[1])+" V"+zoomObject_PS.rescaleY(yScalePS)(r.y[0])+" H"+zoomObject_PS.rescaleX(xScalePS)(r.x[0])
       }
       return path;
     })
     .attr("fill", reachColor)
-    .attr("fill-opacity", d => ""+(d.cov/max_cov))
+    .attr("fill-opacity", d => ""+(projdata.length == 1 ? 1 : opScale(d.cov)))
     .attr("stroke", "none")
     .attr("stroke-width", normalStrokeWidth)
     .attr("pointed", false)
-    .on("click", handleMouseClick)
-    .on("mousemove", handleMouseOver)
-    .on("mouseout", handleMouseOut);
+    .on("click", handleMouseClick_PS)
+    .on("mousemove", handleMouseOver_PS)
+    .on("mouseout", handleMouseOut_PS)
+}
+
+function draw_SS() {
+  containerSS.select("#zoomField_SS").remove()
+  containerSS.selectAll(".states").remove()
+  
+  containerSS.append("rect")
+    .attr("id", "zoomField_SS")
+    .attr("x", margin.left)
+    .attr("y", margin.top)
+    .attr("width", width-margin.right-margin.left)
+    .attr("height", height-margin.bottom-margin.top)
+    .attr("fill", "none")
+    .on("click", handleMouseClick_SS)
+    .on("mousemove", handleMouseOver_SS)
+    .on("mouseout", handleMouseOut_SS);
+  
+  containerSS.selectAll(".states")
+    .data(Object.values(statedata))
+    .enter()
+    .append("rect")
+    .attr("class", "states")
+    .attr("id", d => "s"+d.id)
+    .attr("x", d => zoomObject_SS.rescaleX(xScaleSS)(d.x))
+    .attr("y", d => zoomObject_SS.rescaleY(yScaleSS)(d.y))
+    .attr("width", d => zoomObject_SS.rescaleX(xScaleSS)(d.x1)-zoomObject_SS.rescaleX(xScaleSS)(d.x))
+    .attr("height", d => zoomObject_SS.rescaleY(yScaleSS)(d.y1)-zoomObject_SS.rescaleY(yScaleSS)(d.y))
+    .attr("fill", d => d.color)
+    .attr("stroke", "black")
+    .attr("stroke-width", normalStrokeWidth)
+    .attr("pointed", false)
+    .on("click", handleMouseClick_SS)
+    .on("mouseover", handleMouseOver_SS)
+    .on("mouseout", handleMouseOut_SS)
 }
 
     </script>
