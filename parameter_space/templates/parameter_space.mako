@@ -10,6 +10,22 @@
   path = os.getcwd()
   
 %>
+<%def name="save_button( text='Save' )">
+<%
+    # still a GET
+    url_for_args = {
+        'controller'    : 'visualization',
+        'action'        : 'saved',
+        'type'          : visualization_name,
+        'title'         : title,
+        'config'        : h.dumps( config )
+    }
+    # save to existing visualization
+    if visualization_id:
+        url_for_args[ 'id' ] = visualization_id
+%>
+    <form action="${h.url_for( **url_for_args )}" method="post"><input type="submit" value="${text}" /></form>
+</%def>
 <%
   app_root = "config/plugins/visualizations/"+visualization_name+"/"
   
@@ -32,7 +48,7 @@
                 **{str(k) : results['parameter_bounds'][i] for i, k in enumerate(results['parameters'])})
   
   type = str(results['type'])
-  states = {k['id']: k['bounds'] for k in results['states'] }
+  states = {i: k['bounds'] for i,k in enumerate(results['states']) }
   params_val = results['parameter_values']
   results = {str(k['formula']): k['data'] for k in results['results'] }
   
@@ -84,6 +100,13 @@
           return this.each(function() {
               this.parentNode.appendChild(this);
           });
+      };
+      d3.selection.prototype.first = function() {
+        return d3.select(this[0][0]);
+      };
+      d3.selection.prototype.last = function() {
+        var last = this.size() - 1;
+        return d3.select(this[0][last]);
       };
       function parsing_to_string(x) {
         if(Object.values(x).length > 0) {
@@ -138,6 +161,21 @@
       #resetReachBtn_PS {
         position: absolute;
         top: 40px;
+      }
+      #resetReachOneBtn_PS {
+        position: absolute;
+        top: 40px;
+        left: 75px;
+      }
+      #checkbox_PS_mode {
+        position: absolute;
+        top: 40px;
+        left: 170px;
+      }
+      #text_PS_mode {
+        position: absolute;
+        top: 40px;
+        left: 190px;
       }
       #infoPanel_PS {
         position: absolute;
@@ -199,7 +237,10 @@
   <body>
     <div class="widget_panel">
       <button id="resetZoomBtn_PS">Unzoom</button>
+<!--      ${save_button()} -->
       <button id="resetReachBtn_PS">Deselect</button>
+      <button id="resetReachOneBtn_PS">Deselect last</button>
+      <input type="checkbox" value="mode" class="cb" id="checkbox_PS_mode" checked><span id="text_PS_mode">include</span>
       <textarea id="infoPanel_PS" rows="${len(params)+2}" cols="35" wrap="off" disabled></textarea>
       <!-- dynamicly adds sliders with labels for parameters and variables (if more than 2 vars are present) in mako style -->
       <div id="x_axis_PS_div">
@@ -341,8 +382,7 @@ var xDimPS = document.getElementById("x_axis_PS").value,
     
     thrs = window.bio.thrs,
     formula = document.getElementById("formula").value,
-    sel_result_data = window.result.map[formula],
-    sel_result_data_transposed = (sel_result_data.length > 0 ? sel_result_data[0].map((col, i) => sel_result_data.map(row => row[i])) : []),
+    inclusion = true,
     param_bounds = [],
     var_bounds = [];
 
@@ -365,6 +405,7 @@ window.bio.vars.forEach(x => var_bounds.push(null));
                 draw_PS()
                 compute_statedata()
                 draw_SS()
+                redrawClickedStates()
             }
         });
         d3.select('#checkbox_PS_'+d).on("change", function() {
@@ -378,6 +419,7 @@ window.bio.vars.forEach(x => var_bounds.push(null));
             draw_PS()
             compute_statedata()
             draw_SS()
+            redrawClickedStates()
         });
     })(${key},"${val}");
 % endfor
@@ -391,8 +433,12 @@ window.bio.vars.forEach(x => var_bounds.push(null));
             d3.select("#text_PS_"+d[0]).html(this.value);
             if(! d3.select("#checkbox_PS_"+d[0]).property("checked")) {
                 param_bounds[i] = Number(d3.select("#slider_PS_"+d[0]).property("value"));
+                result_data_relevance()
                 compute_projection()
                 draw_PS()
+                compute_statedata()
+                draw_SS()
+                redrawClickedStates()
             }
         });
         d3.select('#checkbox_PS_'+d[0]).on("change", function() {
@@ -401,8 +447,12 @@ window.bio.vars.forEach(x => var_bounds.push(null));
             } else {
                 param_bounds[i] = null;
             }
+            result_data_relevance()
             compute_projection()
             draw_PS()
+            compute_statedata()
+            draw_SS()
+            redrawClickedStates()
         });
     })(${key},${val});
 % endfor
@@ -440,9 +490,11 @@ d3.select("#x_axis_PS").on("change", function() {
   else                                  yDimPS_id = window.bio.params.findIndex(x => x[0] == yDimPS);
 
   resettedZoom_PS()
+  //resettedClick_PS()
   result_data_relevance()
   compute_projection()
   draw_PS()
+  redrawClickedPoints()
 });
 
 // event listener for change of selectected dimension for Y axis in PS
@@ -462,9 +514,11 @@ d3.select("#y_axis_PS").on("change", function() {
   else                                  yDimPS_id = window.bio.params.findIndex(x => x[0] == yDimPS);
 
   resettedZoom_PS()
+  //resettedClick_PS()
   result_data_relevance()
   compute_projection()
   draw_PS()
+  redrawClickedPoints()
 });
 
 // event listener for change of selectected dimension for X axis in SS
@@ -522,36 +576,52 @@ d3.select("#param_id").on("change", function() {
   draw_PS()
 })
 
+d3.select('#checkbox_PS_mode').on("change", function() {
+    if(d3.select("#checkbox_PS_mode").property("checked")) {
+        d3.select("#text_PS_mode").html("include")
+        inclusion = true
+    } else {
+        d3.select("#text_PS_mode").html("exclude")
+        inclusion = false
+    }
+})
+
+d3.select('#resetReachOneBtn_PS')
+    .on("click", reverseLastClick_PS)
+
 d3.select('#resetReachBtn_PS')
-    .on("click", resettedClick_PS);
+    .on("click", resettedClick_PS)
 d3.select('#resetReachBtn_SS')
-    .on("click", resettedClick_SS);
+    .on("click", resettedClick_SS)
 
 d3.select('#resetZoomBtn_PS')
-    .on("click", resettedZoom_PS);
+    .on("click", resettedZoom_PS)
 d3.select('#resetZoomBtn_SS')
-    .on("click", resettedZoom_SS);
+    .on("click", resettedZoom_SS)
     
 //###################################################    
 
 var width = 550,
     height = 450,
     margin = { top: 10, right: 10, bottom: 50, left: 50 },
-    arrowlen = 7,
-    color = "transparent",
+    edgelen = 7,
+    noColor = "transparent",
     reachColor = "rgb(65, 105, 225)", // "royalblue"
+    unselectedColor = "rgba(65, 105, 225, 0.5)", // "royalblue" with lower opacity
     neutral_col = "black",
     positive_col = "darkgreen",
     negative_col = "red",
     normalStrokeWidth = 1,
     hoverStrokeWidth = 4,
-    transWidth = 2,
-    selfloopWidth = 4,
+    markerWidth = 2,
     projdata = [],
     statedata = [],
     selectedStates = [],
+    selectedParams = [],
+    clicked_states_PS = [],
+    clicked_points_PS = [],
     zoomObject_PS = d3.zoomIdentity,
-    zoomObject_SS = d3.zoomIdentity;
+    zoomObject_SS = d3.zoomIdentity
 
 // trans example = {
 //   0:[0,1],
@@ -652,6 +722,34 @@ var yLabelPS = svgPS.append("text")
       .attr("stroke", "black")
       .text(function() { return yDimSS; })
 
+var defs = svgPS.append("svg:defs");
+defs.append("svg:marker")
+		.attr("id", "greenCross")
+		.attr("viewBox", "0 0 "+edgelen+" "+edgelen)
+		.attr("refX", 0.5*edgelen)
+		.attr("refY", 0.5*edgelen)
+		.attr("markerWidth", edgelen)
+		.attr("markerHeight", edgelen)
+		.attr("orient","auto")
+    .append("svg:path")
+      .attr("stroke", positive_col)
+      //.attr("stroke-width", markerWidth)
+			.attr("d", "M0,"+(0)+" L"+edgelen+","+edgelen+" M0,"+edgelen+" L"+edgelen+",0")
+			.attr("class","clickMark");
+defs.append("svg:marker")
+		.attr("id", "redCross")
+		.attr("viewBox", "0 0 "+edgelen+" "+edgelen)
+		.attr("refX", 0.5*edgelen)
+		.attr("refY", 0.5*edgelen)
+		.attr("markerWidth", edgelen)
+		.attr("markerHeight", edgelen)
+		.attr("orient","auto")
+    .append("svg:path")
+      .attr("stroke", negative_col)
+      //.attr("stroke-width", markerWidth)
+			.attr("d", "M0,"+(0)+" L"+edgelen+","+edgelen+" M0,"+edgelen+" L"+edgelen+",0")
+			.attr("class","arrowHead");
+
 var bottomPanelPS = svgPS.append("g")
     .attr("id", "bPanelPS")
     .attr("class", "panel")
@@ -718,24 +816,43 @@ draw_SS()
 // ################# definitions of functions #################
 
 function result_data_relevance() {
-  sel_result_data = window.result.map[formula];
+  all_pairs = window.result.map[formula];
   
-  var data = []
-  for(var r=0, len=sel_result_data.length; r<len; ++r) {
-    var sid = Number(sel_result_data[r][0])
-    var pid = Number(sel_result_data[r][1])
+  var valid_pairs = []
+  for(var r=0, len=all_pairs.length; r<len; ++r) {
+    var sid = Number(all_pairs[r][0])
+    var pid = Number(all_pairs[r][1])
+    var param_set = window.result.params[pid]
     
-    var shown = (selectedStates.length == 0 ? true : selectedStates.includes(sid))
+    var shown = true
     var vid = 0
     while(shown && vid < var_bounds.length) {
       const bound = var_bounds[vid]
       if(bound !== null && (d3.min(window.result.states[sid][vid]) > bound || d3.max(window.result.states[sid][vid]) < bound)) shown = false
       vid++
     }
-    if(shown) data.push([sid,pid])
+    if(shown) {
+      for(var i=0, len2=param_set.length; i<len2; ++i) {
+        var interval = param_set[i];
+        var par_id = 0;
+        while(shown && par_id < param_bounds.length) {
+          const bound = param_bounds[par_id];
+          if(bound !== null && (d3.min(interval[par_id]) > bound || d3.max(interval[par_id]) < bound)) shown = false;
+          par_id++;
+        }
+        if(shown) valid_pairs.push([sid,pid])
+      }
+    }
   }
-  sel_result_data = data
-  sel_result_data_transposed = (sel_result_data.length > 0 ? sel_result_data[0].map((col, i) => sel_result_data.map(row => row[i])) : [])
+  map_PS = {}
+  map_SS = {}
+  for(var i=0, len=valid_pairs.length; i<len; ++i) {
+    var sid = Number(valid_pairs[i][0])
+    var pid = Number(valid_pairs[i][1])
+    map_PS[sid] = pid
+    if(map_SS[pid] === undefined) map_SS[pid] = [sid]
+    else map_SS[pid].push(sid)
+  }
 }
     
 function compute_projection() {
@@ -744,41 +861,39 @@ function compute_projection() {
       param_ids = [],
       param_sets = [];
 
-  if (sel_result_data_transposed.length > 0) {
-    if (window.bio.vars.includes(xDimPS) || window.bio.vars.includes(yDimPS)) {
-      state_ids = sel_result_data_transposed[0]
-      param_ids = sel_result_data_transposed[1]
-      param_sets = param_ids.map(x => window.result.params[x])
-    } else {
-      param_ids = [...new Set(sel_result_data_transposed[1])]
-      param_sets = param_ids.map(x => window.result.params[x])
-    }
+  if (Object.values(map_PS).length > 0) {
+    state_ids = Object.keys(map_PS)
+    param_ids = Object.values(map_PS)
+    param_sets = []
+    for(var i=0, len=param_ids.length; i<len; ++i)
+      param_sets.push(window.result.params[param_ids[i]])
     
     if(d3.select("#param_id").property("value") == "all") {
       
       for(var p=0, len=param_sets.length; p<len; ++p) {
-        const param_id = param_ids[p];
-        const param_set = param_sets[p];
+        const sid = state_ids[p]
+        const param_id = param_ids[p]
+        const param_set = param_sets[p]
         var data = [];
         for(var i=0, len2=param_set.length; i<len2; ++i) {
-          var interval = param_set[i];
-          var shown = true;
-          var par_id = 0;
-          while(shown && par_id < param_bounds.length) {
-            const bound = param_bounds[par_id];
-            if(bound !== null && (d3.min(interval[par_id]) > bound || d3.max(interval[par_id]) < bound)) shown = false;
-            par_id++;
-          }
-          if(shown) data.push({
-            x: (window.bio.vars.includes(xDimPS) ? window.result.states[state_ids[p]][xDimPS_id] : interval[xDimPS_id]),
-            y: (window.bio.vars.includes(yDimPS) ? window.result.states[state_ids[p]][yDimPS_id] : interval[yDimPS_id])
+          var interval = param_set[i]
+          // reduces array of arrays for param interval bounds into object of arrays indicated with parameter name (starting with empty object) and then
+          // reduces array of arrays for state rectangle bounds into object of arrays indicated with variable name (starting with previous object to concat both together)
+          var all_data = {}
+          window.result.states[sid].reduce((obj,d,i) => { obj[window.bio.vars[i]] = d; return obj }, all_data)
+          interval.reduce((obj,d,i) => { obj[window.bio.params[i][0]] = d; return obj }, all_data)
+          
+          data.push({
+            x:    (window.bio.vars.includes(xDimPS) ? window.result.states[sid][xDimPS_id] : interval[xDimPS_id]),
+            y:    (window.bio.vars.includes(yDimPS) ? window.result.states[sid][yDimPS_id] : interval[yDimPS_id]),
+            all:  all_data
           })
         }
         if(data.length > 0) {
           projdata.push({
             "data": data,
-            "id": (window.bio.vars.includes(xDimPS) || window.bio.vars.includes(yDimPS) ? state_ids[p]+"-"+param_id : param_id),
-            "cov": (window.bio.vars.includes(xDimPS) || window.bio.vars.includes(yDimPS) ? 1 : sel_result_data_transposed[1].filter( x => x == param_id ).length)
+            "id": sid+"x"+param_id,
+            "cov": 1  // TODO: obsolute, should be removed probably
           })
         }
       }
@@ -789,14 +904,7 @@ function compute_projection() {
       var data = [];
       for(var i=0, len2=param_set.length; i<len2; ++i) {
         var interval = param_set[i];
-        var shown = true;
-        var par_id = 0;
-        while(shown && par_id < param_bounds.length) {
-          const bound = param_bounds[par_id];
-          if(bound !== null && (interval[par_id][0] > bound || interval[par_id][1] < bound)) shown = false;
-          par_id++;
-        }
-        if(shown) data.push({
+        data.push({
           x: interval[xDimPS_id],
           y: interval[yDimPS_id],
         })
@@ -805,18 +913,18 @@ function compute_projection() {
         projdata.push({
           "data": data,
           "id"  : p,
-          "cov" : sel_result_data_transposed[1].filter( x => x == p ).length
+          "cov" : Object.values(map_PS).filter( x => x == p ).length
         })
       }
     }
   }
-  //console.log(projdata);
 }
 function compute_statedata() {
   statedata = []
   const vars = window.bio.vars.filter(x => x != xDimSS && x != yDimSS)
-  var state_ids = [...new Set(sel_result_data_transposed[0])]
-  window.state_ids = state_ids
+  var state_ids = []
+  for(var s=0, len=Object.keys(map_SS).length; s<len; ++s) 
+    Object.values(map_SS)[s].forEach(x => state_ids.push(x))
   
   for(var i=0, len=Object.values(window.result.states).length; i < len; ++i) {
     var id    = Number(Object.entries(window.result.states)[i][0])
@@ -837,7 +945,8 @@ function compute_statedata() {
       "x1": state[xDimSS_id][1],
       "y1": state[yDimSS_id][0],
       "id": id,
-      "color": (state_ids.includes(id) ? reachColor : color)
+      "strokeWidth": clicked_states_PS.includes(""+id) ? hoverStrokeWidth : normalStrokeWidth,
+      "color": (state_ids.includes(id) ? (selectedStates.includes(id) ? reachColor : unselectedColor) : noColor)
     })
   }
 }
@@ -860,15 +969,6 @@ function update_axes_SS() {
   // reset brushes
   gBXSS.call(brushXSS.move, null);
   gBYSS.call(brushYSS.move, null);
-}
-function resettedClick_SS() {
-  selectedStates = []
-  
-  result_data_relevance()
-  compute_projection()
-  draw_PS()
-  compute_statedata()
-  draw_SS()
 }
 function resettedZoom_SS() {
   update_axes_SS()
@@ -940,12 +1040,6 @@ function update_axes_PS() {
   gBXPS.call(brushXPS.move, null);
   gBYPS.call(brushYPS.move, null);
 }
-function resettedClick_PS() {
-  compute_projection()
-  draw_PS()
-  compute_statedata()
-  draw_SS()
-}
 function resettedZoom_PS() {
   update_axes_PS()
   containerPS.transition()
@@ -966,6 +1060,7 @@ function zoomed_PS() {
     };
     return path;
   })
+  redrawClickedPoints()
   
   gXPS.call(xAxisPS.scale(x));
   gYPS.call(yAxisPS.scale(y));
@@ -1011,17 +1106,17 @@ function handleMouseOver_PS(d, i) {
       content = "";
       
   if(d3.select(this).attr("class") == "interval") {
-    for(var i=0, len=projdata.length; i < len; ++i) {
-      var pset = projdata[i];
-      for(var j=0, len2=pset.data.length; j < len2; ++j) {
-        const par = pset.data[j];
-        if(mouse[0] > par.x[0] && mouse[0] < par.x[1] && mouse[1] > par.y[0] && mouse[1] < par.y[1]) {
-          p_count++;
-          s_count += pset.cov;
-          break;
+    d3.selectAll(".interval").filter((d,i,nodes) => nodes[i].getAttribute("fill-opacity") != 0)
+      .filter((d,i) => {
+        for(var j=0, len=d.data.length; j < len; ++j) {
+          const par = d.data[j];
+          if(mouse[0] > par.x[0] && mouse[0] < par.x[1] && mouse[1] > par.y[0] && mouse[1] < par.y[1]) {
+            p_count++;
+            s_count += d.cov;
+            break;
+          }
         }
-      }
-    }
+      })
   }
   
   content += "States covered: "+s_count;
@@ -1054,54 +1149,152 @@ function handleMouseOut_PS(d, i) {
   
   div.value = content;
 }
-function handleMouseClick_PS(d, i) {
-  var mouse = d3.mouse(this)
-  mouse = [Number(zoomObject_PS.rescaleX(xScalePS).invert(mouse[0])), Number(zoomObject_PS.rescaleY(yScalePS).invert(mouse[1]))]
-  console.log(mouse[0]+" x "+mouse[1])
-  //console.log(i+":"+d.id)
+function redrawClickedPoints() {
+  containerPS.selectAll(".marker")
+    .attr("d", (d,i) => {
+      var x0 = d[0][xDimPS] !== null ? d[0][xDimPS] : d3.min(thrs[xDimPS]),
+          x1 = d[0][xDimPS] !== null ? d[0][xDimPS] : d3.max(thrs[xDimPS]),
+          y0 = d[0][yDimPS] !== null ? d[0][yDimPS] : d3.min(thrs[yDimPS]),
+          y1 = d[0][yDimPS] !== null ? d[0][yDimPS] : d3.max(thrs[yDimPS])
+      return "M"+zoomObject_PS.rescaleX(xScalePS)(x0)+","+ zoomObject_PS.rescaleY(yScalePS)(y0)+" L"+zoomObject_PS.rescaleX(xScalePS)(x1)+","+ zoomObject_PS.rescaleY(yScalePS)(y1)
+    })
+    .attr("marker-end", d => {
+      if(d[0][xDimPS] === null || d[0][yDimPS] === null) return ""
+      else return (d[1] ? "url(#greenCross)" : "url(#redCross)")
+    }).moveUp()
+    
+}
+function redrawClickedStates() {
+    clicked_states_PS = clicked_points_PS.length == 0 ? [] : Object.keys(map_PS).slice()
+    for(var cp=0,len2=clicked_points_PS.length; cp<len2; ++cp) {
+      var act_cp = clicked_points_PS[cp]
+      var sinds = []
+      // we assume all shown and hidden param intervals according to settings by slider values and selected formula
+      var sel = d3.selectAll(".interval")
+        .filter(d => {
+          var result = false
+          for(var i=0, len=d.data.length; i<len; ++i) {
+            var r = d.data[i],
+                intersect = true,
+                j = 0
+            while(intersect && j < window.bio.params.length) {
+              var par = window.bio.params[j++][0]
+              if( act_cp[0][par] !== null && (Number(act_cp[0][par]) > Number(r.all[par][1]) || Number(act_cp[0][par]) < Number(r.all[par][0])) ) intersect = false
+            }
+            j = 0
+            while(intersect && j < window.bio.vars.length) {
+              var par = window.bio.vars[j++]
+              if( act_cp[0][par] !== null && (Number(act_cp[0][par]) > Number(r.all[par][1]) || Number(act_cp[0][par]) < Number(r.all[par][0])) ) intersect = false
+            }
+            if( intersect ) {
+              result = true
+              map_SS[d.id.replace(/[0-9]+x/,"")].forEach(x => {if(!sinds.includes(""+x)) sinds.push(""+x)} )
+              break
+            }
+          }
+          return !result
+        })
+      clicked_states_PS = clicked_states_PS.filter(x => act_cp[1] && sinds.includes(x) || !act_cp[1] && !sinds.includes(x) )
+    }
+    containerSS.selectAll(".states").attr("stroke-width", (d) => clicked_states_PS.includes(""+d.id) ? hoverStrokeWidth : normalStrokeWidth )
+}
+function handleMouseClick_PS() {
+  var orig_mouse = d3.mouse(this)
+  mouse = [Number(zoomObject_PS.rescaleX(xScalePS).invert(orig_mouse[0])), Number(zoomObject_PS.rescaleY(yScalePS).invert(orig_mouse[1]))]
+  var data = {}
+  window.bio.params.forEach( (d,i) => data[d[0]] = param_bounds[i] );
+  window.bio.vars.forEach( (d,i) => data[d] = var_bounds[i] );
+  data[xDimPS] = mouse[0]
+  data[yDimPS] = mouse[1]
+  clicked_points_PS.push([data, inclusion])
   
+  var sinds = []
+  if(clicked_states_PS.length == 0 && clicked_points_PS.length == 1) clicked_states_PS = Object.keys(map_PS).slice()
+  // we assume all shown and hidden param intervals according to settings by slider values and selected formula
   var sel = d3.selectAll(".interval")
-    .filter(x => {
-      for(var i=0, len=x.data.length; i<len; ++i) {
-        var r = x.data[i];
-        // Y scale is inverted, therefore, we use the the higher threshold as the first one and the lower threshold as the second one
-        if(mouse[0] > Number(r.x[0]) && mouse[0] < Number(r.x[1]) && mouse[1] > Number(r.y[1]) && mouse[1] < Number(r.y[0])) {
-          return true
+    .filter((d) => {
+      var result = false
+      for(var i=0, len=d.data.length; i<len; ++i) {
+        var r = d.data[i]
+        if(mouse[0] > Number(r.x[0]) && mouse[0] < Number(r.x[1]) && mouse[1] > Number(r.y[0]) && mouse[1] < Number(r.y[1])) {
+          result = true
+          map_SS[d.id.replace(/[0-9]+x/,"")].forEach(x => {if(!sinds.includes(""+x)) sinds.push(""+x)} )
+          break
         }
       }
-      return false
-    }).remove()
-  console.log(sel)
-    
-  //containerPS.selectAll(".interval").remove()
-  //containerPS.selectAll(".interval").merge(sel)
+      return !result
+    })
+  clicked_states_PS = clicked_states_PS.filter(x => inclusion && sinds.includes(x) || !inclusion && !sinds.includes(x) )
+  containerSS.selectAll(".states").attr("stroke-width", (d) => clicked_states_PS.includes(""+d.id) ? hoverStrokeWidth : normalStrokeWidth )
   
-  //d3.select("#zoomField_PS").moveUp();
+  containerPS.append("path")
+      .datum([data,inclusion])
+      .attr("class", "marker")
+      .attr("stroke", d => (d[1] ? positive_col : negative_col) )
+      .attr("stroke-width", markerWidth)
+      .attr("marker-end", d => (d[1] ? "url(#greenCross)" : "url(#redCross)") )
+      .attr("d", d => "M"+zoomObject_PS.rescaleX(xScalePS)(d[0][xDimPS])+","+ zoomObject_PS.rescaleY(yScalePS)(d[0][yDimPS])+" l0,0")
+}
+function resettedClick_PS() {
+  clicked_states_PS = []
+  containerSS.selectAll(".states").attr("stroke-width", normalStrokeWidth)
+  clicked_points_PS = []
+  containerPS.selectAll(".marker").remove()
+}
+function reverseLastClick_PS() {
+  if(clicked_points_PS.length > 0) {
+    clicked_points_PS = clicked_points_PS.slice(0, clicked_points_PS.length-1)
+    redrawClickedStates()
+    containerPS.selectAll(".marker").filter((d,i,nodes) => i == nodes.length-1).remove()
+  }
 }
 
 function handleMouseOver_SS(d, i) {
   var div = document.getElementById("infoPanel_SS");
   var content = "";
-    d3.select(this).attr("stroke-width", hoverStrokeWidth);
-  
   content = ""+d3.select(this).attr("id")
-  
   div.value = content;
 }
 function handleMouseOut_SS(d, i) {
-    d3.select(this).attr("stroke-width", normalStrokeWidth);
+  var div = document.getElementById("infoPanel_SS");
+  var content = "";
+  div.value = content;
 }
 function handleMouseClick_SS(d, i) {
-  if(!selectedStates.includes(d.id)) {
-    selectedStates.push(d.id)
-  } else {
-    selectedStates = selectedStates.filter(x => x != d.id)
+  if(d3.select(this).attr("fill") != noColor) {
+    var id = d.id
+    var pid = id+"x"+map_PS[id]
+    if(!selectedStates.includes(id)) {
+      if(selectedStates.length == 0) {
+        // first there is need to hide all param intervals (because all was shown before)
+        d3.selectAll(".interval").attr("fill-opacity",0)
+      }
+      // next step is to show only the selected one
+      var opac = document.getElementById("p"+pid).getAttribute("stored-opacity")
+      document.getElementById("p"+pid).setAttribute("fill-opacity", opac)
+      selectedParams.push(pid)
+      
+      selectedStates.push(id)
+      d3.select(this).attr("fill", reachColor)
+    } else {
+      selectedParams = selectedParams.filter(x => x != pid)
+      selectedStates = selectedStates.filter(x => x != id)
+      d3.select(this).attr("fill", unselectedColor)
+      if(selectedStates.length > 0) {
+        // hides the selected parameter regardless of others
+        document.getElementById("p"+pid).setAttribute("fill-opacity", 0)
+      } else {
+        // shows all param interval as no state is selected
+        d3.selectAll(".interval").attr("fill-opacity", x => document.getElementById("p"+x.id).getAttribute("stored-opacity") )
+      }
+    }
   }
-  result_data_relevance()
-  compute_projection()
-  draw_PS()
-  compute_statedata()
-  draw_SS()
+}
+function resettedClick_SS() {
+  selectedStates = []
+  selectedParams = []
+  d3.selectAll(".states").attr("fill", x => x.color != noColor ? unselectedColor : noColor)
+  d3.selectAll(".interval").attr("fill-opacity", x => document.getElementById("p"+x.id).getAttribute("stored-opacity") )
 }
 
 function draw_PS() {
@@ -1119,15 +1312,16 @@ function draw_PS() {
     .on("mousemove", handleMouseOver_PS)
     .on("mouseout", handleMouseOut_PS);
   
-  var cov_range = projdata.map(x => x.cov)
-  opScale = d3.scaleLinear().domain([d3.min(cov_range),d3.max(cov_range)]).range([0.1,1]);
+  //var cov_range = projdata.map(x => x.cov)
+  //opScale = d3.scaleLinear().domain([d3.min(cov_range),d3.max(cov_range)]).range([0.1,1])
+  var opac = 0.1
   
   containerPS.selectAll(".interval")
     .data(projdata)
     .enter()
     .append("path")
     .attr("class", "interval")
-    .attr("id", d => d.id)
+    .attr("id", d => "p"+d.id)
     .attr("d", d => {
       var path = "";
       for(var i=0, len=d.data.length; i<len; ++i) {
@@ -1138,10 +1332,9 @@ function draw_PS() {
       return path;
     })
     .attr("fill", reachColor)
-    .attr("fill-opacity", d => ""+(projdata.length == 1 ? 1 : opScale(d.cov)))
+    .attr("fill-opacity", d => ""+(projdata.length == 1 ? 1 : (selectedParams.length > 0 && !selectedParams.includes(d.id) ? 0 : opac)))
+    .attr("stored-opacity", d => ""+(projdata.length == 1 ? 1 : opac))  // this serves as temp storage for case when interval is hidden
     .attr("stroke", "none")
-    .attr("stroke-width", normalStrokeWidth)
-    .attr("pointed", false)
     .on("click", handleMouseClick_PS)
     .on("mousemove", handleMouseOver_PS)
     .on("mouseout", handleMouseOut_PS)
@@ -1174,11 +1367,12 @@ function draw_SS() {
     .attr("height", d => zoomObject_SS.rescaleY(yScaleSS)(d.y1)-zoomObject_SS.rescaleY(yScaleSS)(d.y))
     .attr("fill", d => d.color)
     .attr("stroke", "black")
-    .attr("stroke-width", normalStrokeWidth)
+    .attr("stroke-width", d => d.strokeWidth)
     .attr("pointed", false)
     .on("click", handleMouseClick_SS)
     .on("mouseover", handleMouseOver_SS)
     .on("mouseout", handleMouseOut_SS)
+
 }
 
     </script>

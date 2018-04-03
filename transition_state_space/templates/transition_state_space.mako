@@ -120,6 +120,13 @@
               this.parentNode.appendChild(this);
           });
       };
+      d3.selection.prototype.first = function() {
+        return d3.select(this[0][0]);
+      };
+      d3.selection.prototype.last = function() {
+        var last = this.size() - 1;
+        return d3.select(this[0][last]);
+      };
       function parsing_to_string(x) {
         if(Object.values(x).length > 0) {
           var result = Number.parseFloat(Object.values(x)[0]).toFixed(2).toString();
