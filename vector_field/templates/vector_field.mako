@@ -49,7 +49,7 @@
   ## if this input were approximated before and the output is still in tmp the approximation will be skipped
   if not os.path.isfile(output_data):
     print("## Approximation needed !!!")
-    cmd = "echo '{}' | {} > {}".format(data_text,approx_path,output_data)
+    cmd = "echo '{}' | {} > '{}'".format(data_text,approx_path,output_data)
     os.system( cmd )
   with open(output_data) as f: approx_data = [line.rstrip('\n') for line in f]
     

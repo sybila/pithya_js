@@ -49,7 +49,7 @@
   ## if this input were approximated before and the output is still in tmp the approximation will be skipped
   if not os.path.isfile(output_data):
     print("## Approximation needed !!!")
-    cmd = "echo '{}' | {} > {}".format(data_text,approx_path,output_data)
+    cmd = "echo '{}' | {} > '{}'".format(data_text,approx_path,output_data)
     os.system( cmd )
   with open(output_data) as f: approx_data = [line.rstrip('\n') for line in f]
     
@@ -336,7 +336,10 @@ window.bio.params.map(x => params[x[0]] = x[1]);
 // adds event listener for change of colouring_orientation
 d3.select('#input_color_style').on("input", function() {
   color_style = this.value;
+  transform_tss();
+  draw();
   zoomed();
+  if(reach_start !== null) handleMouseClick(null,reach_start);
 });
 
 // event listener for change of selectected dimension for X axis
@@ -700,7 +703,7 @@ function transform_tss() {
         // NOTE: the end point of transition in Y axis, the condition must be the opposite because current values are in model scale (domain, not range) 
         // and so they will be rescaled upside down for drawing
              (begin.y > end.y ? begin.y1 : begin.y)),
-        // NOTE: points [x2,y2] and [x3,y3] (arrow head) are set in frame scale (range, not domain) because they need remain constant during zooming
+        // NOTE: points [x2,y2] and [x3,y3] (arrow head) are set in frame scale (range, not domain) because they need to remain constant during zooming
         x2: (begin.x == end.x ? 
              -0.5*arrowlen :
              (begin.x < end.x ? -arrowlen : arrowlen)),
@@ -710,7 +713,10 @@ function transform_tss() {
         x3: (begin.x == end.x ? arrowlen : 0),
         y3: (begin.y == end.y ? arrowlen : 0),
         id: "t"+sid+"-"+nid,
-        color: (begin == end ? neutral_col : (begin.x < end.x || begin.y < end.y ? positive_col : negative_col)),
+        color:  (begin == end || color_style == "none" ? neutral_col : 
+                  (color_style == "both" ? (begin.x < end.x || begin.y < end.y && color_style ? positive_col : negative_col) :
+                    ((begin.x < end.x && color_style == "horizontal") || (begin.y < end.y && color_style == "vertical") ? positive_col : 
+                      ((begin.x > end.x && color_style == "horizontal") || (begin.y > end.y && color_style == "vertical") ? negative_col : neutral_col)))),
         class: (begin == end ? "loop" : "transition")});
     });
   })
