@@ -74,7 +74,8 @@
         for(var i = 1, len = ramps.length;  i < len; ++i) {
           a = ramps[i-1]
           b = ramps[i]
-          if(s >= a[0] && s <= b[0]) return(a[1]+(s-a[0])/(b[0]-a[0])*(b[1]-a[1]))
+          if(s >= a[0] && s <= b[0]) 
+            return((b[0]-a[0]) > 0 ? a[1]+(s-a[0])/(b[0]-a[0])*(b[1]-a[1]) : a[1])
         }
       }
       

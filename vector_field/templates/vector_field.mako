@@ -97,7 +97,8 @@
         for(var i = 1;  i < ramps.length; i++) {
           a = ramps[i-1]
           b = ramps[i]
-          if(s >= a[0] && s <= b[0]) return(a[1]+(s-a[0])/(b[0]-a[0])*(b[1]-a[1]))
+          if(s >= a[0] && s <= b[0]) 
+            return((b[0]-a[0]) > 0 ? a[1]+(s-a[0])/(b[0]-a[0])*(b[1]-a[1]) : a[1])
         }
       }
       
@@ -715,16 +716,22 @@ function elongate() {
   d3.select("#trajectory").remove();
   var vars = Object.assign({}, reach_end);
   
-  var length = 500;
+  var length = 500
   for(var tp = 0; tp < length; tp++) {
     // compute derivatives with current values of parameters and variables
-    var diffs = {};
-    for (const [key, eq] of Object.entries(window.bio.eqs)) {
-      diffs[key] = Number(eq(vars, params));
+    var diffs = {}
+    for (const [key, eq] of Object.entries(window.bio.eqs)) 
+      diffs[key] = Number(eq(vars, params))
+    var tempvars = Object.assign({}, vars);
+    for (const [key, val] of Object.entries(diffs))
+      tempvars[key] += val*traj_dt
+    if(Object.values(tempvars).includes(Infinity) || Object.values(tempvars).includes(-Infinity) || Object.values(tempvars).includes(NaN)) {
+      console.log("Derivation went to infinite numbers!",tempvars)
+      break
+    } else {
+      vars = Object.assign({}, tempvars)
+      trajectory += "L"+zoomObject.rescaleX(xScale)(vars[xDim])+","+zoomObject.rescaleY(yScale)(vars[yDim])+" ";
     }
-    for (const [key, val] of Object.entries(diffs)) 
-      vars[key] += val*traj_dt;
-    trajectory += "L"+zoomObject.rescaleX(xScale)(vars[xDim])+","+zoomObject.rescaleY(yScale)(vars[yDim])+" ";
   }
   reach_end = Object.assign({}, vars);
   trajectory_length += length;
@@ -753,20 +760,28 @@ function reach(event) {
         else                  reach_start[key] = Number(d3.select("#slider_"+key).property("value"));
       }
   }
-  var vars = Object.assign({}, reach_start);
+  var vars = Object.assign({}, reach_start)
   trajectory = "M"+zoomObject.rescaleX(xScale)(vars[xDim])+","+zoomObject.rescaleY(yScale)(vars[yDim])+" ";
   
   var length = trajectory_length;
   for(var tp = 0; tp < length; tp++) {
     // compute derivatives with current values of parameters and variables
-    var diffs = {};
-    for (const [key, eq] of Object.entries(window.bio.eqs)) {
-      diffs[key] = Number(eq(vars, params));
+    var diffs = {}
+    for (const [key, eq] of Object.entries(window.bio.eqs))
+      diffs[key] = Number(eq(vars, params))
+    var tempvars = Object.assign({}, vars);
+    for (const [key, val] of Object.entries(diffs))
+      tempvars[key] += val*traj_dt
+    if(Object.values(tempvars).includes(Infinity) || Object.values(tempvars).includes(-Infinity) || Object.values(tempvars).includes(NaN)) {
+      console.log("Derivation went to infinite numbers!",tempvars)
+      console.log(vars)
+      break
+    } else {
+      vars = Object.assign({}, tempvars)
+      trajectory += "L"+zoomObject.rescaleX(xScale)(vars[xDim])+","+zoomObject.rescaleY(yScale)(vars[yDim])+" ";
     }
-    for (const [key, val] of Object.entries(diffs)) 
-      vars[key] += val*traj_dt;
-    trajectory += "L"+zoomObject.rescaleX(xScale)(vars[xDim])+","+zoomObject.rescaleY(yScale)(vars[yDim])+" ";
   }
+  console.log(trajectory)
   reach_end = Object.assign({}, vars);
   container.append("path")
       .attr("id", "trajectory")
