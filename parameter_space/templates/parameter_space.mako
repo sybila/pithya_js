@@ -985,14 +985,10 @@ function compute_projection() {
   projdata = [];
   var state_ids = [],
       param_ids = [];
-//      param_sets = [];
 
   if (Object.values(map_PS).length > 0) {
     state_ids = Object.keys(map_PS)
     param_ids = Object.values(map_PS)
-//    param_sets = []
-//    for(var i=0, len=param_ids.length; i<len; ++i) 
-//      param_sets.push(window.result.params[param_ids[i]])
       
     if(window.result.type == 'smt') {
       precomputed_params = {}
@@ -1022,11 +1018,9 @@ function compute_projection() {
     
     if(d3.select("#param_id").property("value") == "all") {
       
-//      for(var p=0, len=param_sets.length; p<len; ++p) {
       for(var p=0, len=param_ids.length; p<len; ++p) {
         const sid = state_ids[p]
         const param_id = param_ids[p]
-//        const param_set = param_sets[p]
         const param_set = window.result.params[param_id]
         var data = []
         if(window.result.type != 'smt') {
@@ -1066,7 +1060,6 @@ function compute_projection() {
           })
         }
       }
-      //console.log(projdata)
     } else {
       const p = d3.select("#param_id").property("value");
       const param_set = window.result.params[p];
@@ -1401,7 +1394,11 @@ function handleMouseClick_PS() {
       for(var i=0, len=d.data.length; i<len; ++i) {
         const r = d.data[i]
         if((window.result.type == 'rectangular' && mouse[0] > Number(r.x[0]) && mouse[0] < Number(r.x[1]) && mouse[1] > Number(r.y[0]) && mouse[1] < Number(r.y[1])) ||
-           (window.result.type == 'smt' && mouse[0] > r.x[0]-radius && mouse[0] < r.x[1]+radius && mouse[1] > r.y[0]-radius && mouse[1] < r.y[1]+radius)) {
+           (window.result.type == 'smt' && 
+            orig_mouse[0] > zoomObject_PS.rescaleX(xScalePS)(r.x[0])-radius && 
+            orig_mouse[0] < zoomObject_PS.rescaleX(xScalePS)(r.x[1])+radius && 
+            orig_mouse[1] > zoomObject_PS.rescaleY(yScalePS)(r.y[0])-radius && 
+            orig_mouse[1] < zoomObject_PS.rescaleY(yScalePS)(r.y[1])+radius)) {
           result = true
           map_SS[d.id.replace(/[0-9]+x/,"")].forEach(x => {if(!sinds.includes(""+x)) sinds.push(""+x)} )
           break
