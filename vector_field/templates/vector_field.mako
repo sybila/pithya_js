@@ -282,7 +282,7 @@
         arrows count: <span id="text_gridSize"></span><br>
         <input type="range" min=10 max=100 value=25 step=1 class="slider" id="input_gridSize"><br>
         derivative scale: <span id="text_dt"></span><br>
-        <input type="range" min=0.01 max=1 value=1 step=0.01 class="slider" id="input_dt"><br>
+        <input type="number" min=0.01 max=1 value=1 step=0.01 id="input_dt"><br>
         colouring threshold: <span id="text_color_thr"></span><br>
         <input type="range" min=0 max=0.1 value=0.05 step=0.01 class="slider" id="input_color_thr"><br>
         colouring orientation<br>
@@ -724,7 +724,7 @@ function elongate() {
       diffs[key] = Number(eq(vars, params))
     var tempvars = Object.assign({}, vars);
     for (const [key, val] of Object.entries(diffs))
-      tempvars[key] += val*traj_dt
+      tempvars[key] += val*dt
     if(Object.values(tempvars).includes(Infinity) || Object.values(tempvars).includes(-Infinity) || Object.values(tempvars).includes(NaN)) {
       console.log("Derivation went to infinite numbers!",tempvars)
       break
@@ -771,7 +771,7 @@ function reach(event) {
       diffs[key] = Number(eq(vars, params))
     var tempvars = Object.assign({}, vars);
     for (const [key, val] of Object.entries(diffs))
-      tempvars[key] += val*traj_dt
+      tempvars[key] += val*dt
     if(Object.values(tempvars).includes(Infinity) || Object.values(tempvars).includes(-Infinity) || Object.values(tempvars).includes(NaN)) {
       console.log("Derivation went to infinite numbers!",tempvars)
       console.log(vars)
@@ -781,7 +781,6 @@ function reach(event) {
       trajectory += "L"+zoomObject.rescaleX(xScale)(vars[xDim])+","+zoomObject.rescaleY(yScale)(vars[yDim])+" ";
     }
   }
-  console.log(trajectory)
   reach_end = Object.assign({}, vars);
   container.append("path")
       .attr("id", "trajectory")
