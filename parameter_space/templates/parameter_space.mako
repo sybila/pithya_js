@@ -156,8 +156,6 @@
     <title>Parameter Space</title>
   	<script src="https://d3js.org/d3.v4.js" charset="utf-8"></script>
     <script src="static/mathjs-4.4.2/dist/math.min.js"></script>
-    <script src="static/parallel.js-0.2/lib/parallel.js"></script>
-    <script src="static/parallel.js-0.2/lib/eval.js"></script>
   	<script type="text/javascript" charset="utf-8">
       // definition of functions used in bio files so there is no need to transorm them 
       function Hillm(x,t,n,b,a) {
@@ -197,6 +195,37 @@
           }
           return difference;
       };
+      
+      // Warn if overriding existing method
+      if(Array.prototype.equals)
+          console.warn("Overriding existing Array.prototype.equals. Possible causes: New API defines the method, there's a framework conflict or you've got double inclusions in your code.");
+      // attach the .equals method to Array's prototype to call it on any array
+      Array.prototype.equals = function (array) {
+          // if the other array is a falsy value, return
+          if (!array)
+              return false;
+      
+          // compare lengths - can save a lot of time 
+          if (this.length != array.length)
+              return false;
+      
+          for (var i = 0, l=this.length; i < l; i++) {
+              // Check if we have nested arrays
+              if (this[i] instanceof Array && array[i] instanceof Array) {
+                  // recurse into the nested arrays
+                  if (!this[i].equals(array[i]))
+                      return false;       
+              }           
+              else if (this[i] != array[i]) { 
+                  // Warning - two different object instances will never be equal: {x:20} != {x:20}
+                  return false;   
+              }           
+          }       
+          return true;
+      }
+      // Hide method from for-in loops
+      Object.defineProperty(Array.prototype, "equals", {enumerable: false});
+      
       d3.selection.prototype.moveUp = function() {
           return this.each(function() {
               this.parentNode.appendChild(this);
@@ -261,6 +290,16 @@
       #resetZoomBtn_PS {
         position: absolute;
         top: 10px;
+      }
+      #addMoreSamplePointsBtn_PS {
+        position: absolute;
+        top: 10px;
+        left: 75px;
+      }
+      #slider_PS_radius_wrapper {
+        position: absolute;
+        top: 0px;
+        left: 160px;
       }
       #resetReachBtn_PS {
         position: absolute;
@@ -341,6 +380,11 @@
   <body>
     <div class="widget_panel">
       <button id="resetZoomBtn_PS">Unzoom</button>
+      <button id="addMoreSamplePointsBtn_PS">Add points</button>
+      <div id="slider_PS_radius_wrapper">
+        radius: <span id="text_PS_radius"></span><br>
+        <input type="range" min=1 max=10 value=4 step=1 class="slider" id="slider_PS_radius">
+      </div>
 <!--      ${save_button()} -->
       <button id="resetReachBtn_PS">Deselect</button>
       <button id="resetReachOneBtn_PS">Deselect last</button>
@@ -488,7 +532,10 @@ var xDimPS = document.getElementById("x_axis_PS").value,
     formula = document.getElementById("formula").value,
     inclusion = true,
     param_bounds = [],
+    radius = Number(d3.select("#slider_PS_radius").property("value")),
     var_bounds = [];
+
+d3.select("#text_PS_radius").html(radius)
 
 // initial parametric bounds are not limited (projection through all parametric dimensions)
 window.bio.params.forEach(x => param_bounds.push(null));
@@ -594,8 +641,6 @@ d3.select("#x_axis_PS").on("change", function() {
   else                                  yDimPS_id = window.bio.params.findIndex(x => x[0] == yDimPS);
 
   resettedZoom_PS()
-  //resettedClick_PS()
-  result_data_relevance()
   compute_projection()
   draw_PS()
   redrawClickedPoints()
@@ -618,8 +663,6 @@ d3.select("#y_axis_PS").on("change", function() {
   else                                  yDimPS_id = window.bio.params.findIndex(x => x[0] == yDimPS);
 
   resettedZoom_PS()
-  //resettedClick_PS()
-  result_data_relevance()
   compute_projection()
   draw_PS()
   redrawClickedPoints()
@@ -690,9 +733,17 @@ d3.select('#checkbox_PS_mode').on("change", function() {
     }
 })
 
+d3.select('#addMoreSamplePointsBtn_PS')
+    .on("click", addMoreSamplePointsClick_PS)
+d3.select('#slider_PS_radius')
+    .on("change", function() {
+      radius = d3.select("#slider_PS_radius").property("value")
+      d3.select("#text_PS_radius").html(radius)
+      zoomed_PS()
+    })
+
 d3.select('#resetReachOneBtn_PS')
     .on("click", reverseLastClick_PS)
-
 d3.select('#resetReachBtn_PS')
     .on("click", resettedClick_PS)
 d3.select('#resetReachBtn_SS')
@@ -718,7 +769,6 @@ var width = 550,
     normalStrokeWidth = 1,
     hoverStrokeWidth = 4,
     markerWidth = 2,
-    radius = 4,
     projdata = [],
     statedata = [],
     selectedStates = [],
@@ -728,13 +778,8 @@ var width = 550,
     zoomObject_PS = d3.zoomIdentity,
     zoomObject_SS = d3.zoomIdentity
 
-// trans example = {
-//   0:[0,1],
-//   1:[0,3],
-//   2:[3],
-//   3:[3]
-// };
 
+// Definitions of D3 scales used in visualisation
 var xScalePS = d3.scaleLinear()
       .domain([d3.min(thrs[xDimPS],parseFloat),
                d3.max(thrs[xDimPS],parseFloat)])
@@ -752,7 +797,8 @@ var yScalePS = d3.scaleLinear()
       .domain([d3.min(thrs[yDimSS],parseFloat),
                d3.max(thrs[yDimSS],parseFloat)])
       .range([height - margin.bottom, margin.top])
-      
+
+// Definitions of D3 brush objects for plots in visualisation (each plot can be brushed in both axis separately)      
 var brushXPS = d3.brushX()
     .extent([[margin.left, 0], [width-margin.right, margin.bottom]])
     .on("end", brushedX_PS),
@@ -769,13 +815,15 @@ var brushXPS = d3.brushX()
     .extent([[-margin.left, margin.top], [0, height-margin.bottom]])
     .on("end", brushedY_SS)
 
+// Definitions of D3 zoom objects for plots in vis
+// TODO: boundaries are moving when zooming in
 var zoomPS = d3.zoom()
-          //.scaleExtent([1, Infinity])
-          //.translateExtent([[0,0],[width,height]])
+          .scaleExtent([1, Infinity])
+          .translateExtent([[0,0],[width,height]])
           .on("zoom", zoomed_PS),
     zoomSS = d3.zoom()
-          //.scaleExtent([1, Infinity])
-          //.translateExtent([[0,0],[width,height]])
+          .scaleExtent([1, Infinity])
+          .translateExtent([[0,0],[width,height]])
           .on("zoom", zoomed_SS)
           
 var svgPS = d3.select("body").append("svg")
@@ -954,14 +1002,15 @@ function result_data_relevance() {
   map_PS = {}
   map_SS = {}
   for(var i=0, len=valid_pairs.length; i<len; ++i) {
-    var sid = Number(valid_pairs[i][0])
-    var pid = Number(valid_pairs[i][1])
+    const sid = Number(valid_pairs[i][0])
+    const pid = Number(valid_pairs[i][1])
     map_PS[sid] = pid
     if(map_SS[pid] === undefined) map_SS[pid] = [sid]
     else map_SS[pid].push(sid)
   }
   if(window.result.type == 'smt') {
     // symbolic parameters based on SMT formulae
+    // TODO: reduce following part so context_map might not be needed
     context_map = {}   // dict for each model parameter it contains either one particular value or a list of random values within its bounds (as defined in the model)
     for(var p=0; p < window.bio.params.length; p++) {
       // if the boundary is set it will be passed to context_map
@@ -979,8 +1028,38 @@ function result_data_relevance() {
       context_map[window.bio.params[p][0]] = context
     }
     context_map['length'] = d3.max(Object.values(context_map).map(d => d.length))
+    ////////////////
+    map_CTX = {}
+    for(var i=0, len2=context_map["length"]; i<len2; ++i) {
+      var valid_formulae = new Set()
+      var valid_states   = new Set()
+      var context = {}
+      for(var j=0; j<window.bio.params.length; ++j) {
+        var pname = window.bio.params[j][0]
+        var value = context_map[pname].length > 1 ? context_map[pname][i] : context_map[pname][0] // coordinate of parametrization point
+        context[pname] = value
+      }
+      context['TRUE'] = true
+      context['FALSE'] = false
+
+      for(var p=0, len=Object.values(map_PS).length; p<len; ++p) {
+        const sid = Object.keys(map_PS)[p]
+        const pid = Object.values(map_PS)[p]
+        const formula = window.result.params[pid]
+        if(valid_formulae.has(pid)) {
+          valid_states.add(sid)
+        } else {
+          if(math.eval(formula, context)) {
+            valid_formulae.add(pid)
+            valid_states.add(sid)
+          }
+        }
+      }
+      map_CTX[i] = { 'ctx': context, 'state_ids': valid_states, 'param_ids': valid_formulae }
+    }
   }
-  console.log(map_PS)
+  console.log("# of states is "+(Object.keys(map_PS).length))
+  console.log("# of unique formulae is "+(new Set(Object.values(map_PS)).size))
 }
     
 function compute_projection() {
@@ -993,58 +1072,54 @@ function compute_projection() {
     param_ids = Object.values(map_PS)
       
     if(window.result.type == 'smt') {
-      map_CTX = {}
-      let prl = new Parallel([... new Array(context_map["length"]).keys()], {env: {
-        bio_params: window.bio.params,
-        context_map: context_map,
-        state_ids: state_ids,
-        param_ids: param_ids,
-        result_params: window.result.params
-      },
-        envNamespace: 'env', 
-        evalPath: './static/parallel.js-0.2/lib/eval.js'
-      })
-      //for(var i=0, len2=context_map["length"]; i<len2; ++i) {
-      prl.map(function(i) {
-        importScripts("https://rawgit.com/josdejong/mathjs/master/dist/math.min.js");
-        var valid_formulae = new Set()
-        var valid_states   = new Set()
-        var context = {}
-        console.log(i)
-        for(var j=0; j<global.env.bio_params.length; ++j) {
-          var pname = global.env.bio_params[j][0]
-          var value = global.env.context_map[pname].length > 1 ? global.env.context_map[pname][i] : global.env.context_map[pname][0] // coordinate of parametrization point
-          context[pname] = value
-        }
-        context['TRUE'] = true
-        context['FALSE'] = false
-
-        for(var p=0, len=global.env.param_ids.length; p<len; ++p) {
-          const sid = global.env.state_ids[p]
-          const pid = global.env.param_ids[p]
-          const formula = global.env.result_params[pid]
-          if(valid_formulae.has(pid)) {
-            valid_states.add(sid)
-          } else {
-            if(math.eval(formula, context)) {
-              valid_formulae.add(pid)
-              valid_states.add(sid)
+      for(var i=0, len2=Object.keys(map_CTX).length; i<len2; ++i) {
+        var ctx = Object.assign({}, map_CTX[i]['ctx'])
+        
+        if(window.bio.vars.includes(xDimPS) || window.bio.vars.includes(yDimPS)) {
+          // combination plot of parameter and variable - we need to draw lines as an extension of point with valid states width
+          var name = window.bio.vars.includes(xDimPS) ? xDimPS : yDimPS
+          var vid  = window.bio.vars.includes(xDimPS) ? xDimPS_id : yDimPS_id
+          var states = {}
+          states[name] = []
+          states['scov'] = []
+          Array.from(map_CTX[i]['state_ids']).reduce((obj,sid) => {
+            var bound = window.result.states[sid][vid]
+            var uniq = true
+            for(var j=0,len3=obj[name].length; j<len3; ++j) {
+              if(obj[name][j].equals(bound)) {
+                uniq = false
+                obj['scov'][j]++
+                break
+              }
             }
+            if(uniq) {
+              obj[name].push(bound)
+              obj['scov'].push(1)
+            }
+            return obj 
+          }, states)
+          for(var j=0,len3=states[name].length; j<len3; ++j) {
+            var data = Object.assign({}, ctx)
+            data[name] = states[name][j]
+            projdata.push({
+              "data": [data],
+              "id"  : i+"x"+j,
+              "cov" : states['scov'][j],
+              "pcov": map_CTX[i]['param_ids'].size
+            })
           }
+        } else {
+          // just parameter space - so only points coordinates are needed
+          if(map_CTX[i]['param_ids'].size > 0) {
+            projdata.push({
+              "data": [ctx],
+              "id"  : i,
+              "cov" : map_CTX[i]['state_ids'].size,
+              "pcov": map_CTX[i]['param_ids'].size
+            })
+          } 
         }
-/*        map_CTX[i] = { 'state_ids': valid_states, 'param_ids': valid_formulae }
-        if(valid_formulae.size > 0) {
-          projdata.push({
-            "data": [context],
-            "id"  : i,
-            "cov" : valid_states.size,
-            "pcov": valid_formulae.size
-          })
-        } */
-        return({'id': i, 'sids': valid_states, 'pids': valid_formulae, 'ctx': context})
-      }).then(function(res) {
-        console.log(res)
-      });
+      }
     } else {
     
       if(d3.select("#param_id").property("value") == "all") {
@@ -1063,8 +1138,8 @@ function compute_projection() {
             interval.reduce((obj,d,i) => { obj[window.bio.params[i][0]] = d; return obj }, all_data)
             
             data.push({
-              x:    (window.bio.vars.includes(xDimPS) ? window.result.states[sid][xDimPS_id] : interval[xDimPS_id]),
-              y:    (window.bio.vars.includes(yDimPS) ? window.result.states[sid][yDimPS_id] : interval[yDimPS_id]),
+              x:    all_data[xDimPS], //(window.bio.vars.includes(xDimPS) ? window.result.states[sid][xDimPS_id] : interval[xDimPS_id]),
+              y:    all_data[yDimPS], //(window.bio.vars.includes(yDimPS) ? window.result.states[sid][yDimPS_id] : interval[yDimPS_id]),
               all:  all_data
             })
           }
@@ -1241,8 +1316,16 @@ function zoomed_PS() {
       // Y scale is inverted, therefore, we use the the higher threshold as the first one and the lower threshold as the second one
       if(window.result.type != 'smt')
         path += " M"+x(r.x[0])+","+y(r.y[1])+" H"+x(r.x[1])+" V"+y(r.y[0])+" H"+x(r.x[0])
-      else
-        path += " M"+x(r[xDimPS])+","+y(r[yDimPS])+" m -"+radius+",0 a"+radius+","+radius+" 0 1,0 "+(2*radius)+",0 a"+radius+","+radius+" 0 1,0 -"+(2*radius)+",0"
+      else {
+          if(window.bio.vars.includes(xDimPS) || window.bio.vars.includes(yDimPS)) {
+            if(window.bio.vars.includes(xDimPS)) {
+              path += " M"+zoomObject_PS.rescaleX(xScalePS)(r[xDimPS][0])+","+(zoomObject_PS.rescaleY(yScalePS)(r[yDimPS])+radius)+" H"+zoomObject_PS.rescaleX(xScalePS)(r[xDimPS][1])+" V"+(zoomObject_PS.rescaleY(yScalePS)(r[yDimPS])-radius)+" H"+zoomObject_PS.rescaleX(xScalePS)(r[xDimPS][0])
+            } else {
+              path += " M"+(zoomObject_PS.rescaleX(xScalePS)(r[xDimPS])+radius)+","+zoomObject_PS.rescaleY(yScalePS)(r[yDimPS][0])+" V"+zoomObject_PS.rescaleY(yScalePS)(r[yDimPS][1])+" H"+(zoomObject_PS.rescaleX(xScalePS)(r[xDimPS])-radius)+" V"+zoomObject_PS.rescaleY(yScalePS)(r[yDimPS][0])
+            }
+          } else
+            path += " M"+zoomObject_PS.rescaleX(xScalePS)(r[xDimPS])+","+zoomObject_PS.rescaleY(yScalePS)(r[yDimPS])+" m -"+radius+",0 a"+radius+","+radius+" 0 1,0 "+(2*radius)+",0 a"+radius+","+radius+" 0 1,0 -"+(2*radius)+",0"
+      }
     };
     return path;
   })
@@ -1361,14 +1444,30 @@ function redrawClickedPoints() {
 }
 function redrawClickedStates() {
     clicked_states_PS = clicked_points_PS.length == 0 ? [] : Object.keys(map_PS).slice()
+    const state_ids = Object.keys(map_PS).length > 0 ? Object.keys(map_PS) : []
+    const param_ids = Object.values(map_PS).length > 0 ? Object.values(map_PS) : []
     for(var cp=0,len2=clicked_points_PS.length; cp<len2; ++cp) {
       var act_cp = clicked_points_PS[cp]
       var sinds = []
-      if(d3.select(this).attr("class") == "interval") {
-        if(window.result.type == 'smt') {
-          // map_CTX[i] = { 'state_ids': valid_states, 'param_ids': valid_formulae }
-//          sinds = [... map_CTX[dat.id]['state_ids']]
-        } else {
+      if(window.result.type == 'smt') {
+        var valid_states = new Set()
+        if(Object.values(map_PS).length > 0) {
+          var data = Object.assign({}, act_cp[0])
+          data['TRUE'] = true
+          data['FALSE'] = false
+    
+          for(var p=0, len=param_ids.length; p<len; ++p) {
+            const sid = state_ids[p]
+            const pid = param_ids[p]
+            
+            if(!valid_states.has(sid) && math.eval(window.result.params[pid], data)) {
+              valid_states.add(sid)
+            }
+          }
+        }
+        sinds = [... valid_states]
+      } else {
+        if(d3.select(this).attr("class") == "interval") {
           // we assume all shown and hidden param intervals according to settings by slider values and selected formula
           var sel = d3.selectAll(".interval")
             .filter(d => {
@@ -1412,11 +1511,27 @@ function handleMouseClick_PS(dat, ind) {
   
   var sinds = []
   if(clicked_states_PS.length == 0 && clicked_points_PS.length == 1) clicked_states_PS = Object.keys(map_PS).slice()
-  if(d3.select(this).attr("class") == "interval") {
-    if(window.result.type == 'smt') {
-      // map_CTX[i] = { 'state_ids': valid_states, 'param_ids': valid_formulae }
-      sinds = [... map_CTX[dat.id]['state_ids']]
-    } else {
+  
+  if(window.result.type == 'smt') {
+    var valid_states = new Set()
+    if (Object.values(map_PS).length > 0) {
+      state_ids = Object.keys(map_PS)
+      param_ids = Object.values(map_PS)
+      data['TRUE'] = true
+      data['FALSE'] = false
+
+      for(var p=0, len=param_ids.length; p<len; ++p) {
+        const sid = state_ids[p]
+        const pid = param_ids[p]
+        
+        if(!valid_states.has(sid) && math.eval(window.result.params[pid], data)) {
+          valid_states.add(sid)
+        }
+      }
+    }
+    sinds = [... valid_states]
+  } else {
+    if(d3.select(this).attr("class") == "interval") {
       // we assume all shown and hidden param intervals according to settings by slider values and selected formula
       var sel = d3.selectAll(".interval")
         .filter((d) => {
@@ -1457,6 +1572,57 @@ function reverseLastClick_PS() {
     containerPS.selectAll(".marker").filter((d,i,nodes) => i == nodes.length-1).remove()
   }
 }
+function changeRadius_PS() {
+  if(window.result.type == 'smt') {
+    radius = Number(d3.select("#slider_PS_radius").property("value"))
+    draw_PS()
+  }
+}
+function addMoreSamplePointsClick_PS() {
+  if(window.result.type == 'smt') {
+    var nPoints = 100
+    // symbolic parameters based on SMT formulae
+    for(var p=0; p < window.bio.params.length; p++) {
+      if(param_bounds[p] === null) {
+        // if the boundary is NOT set a particular context will be generated
+        low  = window.bio.params[p][1]
+        high = window.bio.params[p][2]
+        for(var i=0; i<nPoints; i++)   context_map[window.bio.params[p][0]].push(getRandom(low,high))
+      }
+    }
+    context_map['length'] = d3.max(Object.values(context_map).map(d => d.length))
+    ////////////////
+    for(var i=context_map["length"]-nPoints, len2=context_map["length"]; i<len2; ++i) {
+      var valid_formulae = new Set()
+      var valid_states   = new Set()
+      var context = {}
+      for(var j=0; j<window.bio.params.length; ++j) {
+        var pname = window.bio.params[j][0]
+        var value = context_map[pname].length > 1 ? context_map[pname][i] : context_map[pname][0] // coordinate of parametrization point
+        context[pname] = value
+      }
+      context['TRUE'] = true
+      context['FALSE'] = false
+
+      for(var p=0, len=Object.values(map_PS).length; p<len; ++p) {
+        const sid = Object.keys(map_PS)[p]
+        const pid = Object.values(map_PS)[p]
+        const formula = window.result.params[pid]
+        if(valid_formulae.has(pid)) {
+          valid_states.add(sid)
+        } else {
+          if(math.eval(formula, context)) {
+            valid_formulae.add(pid)
+            valid_states.add(sid)
+          }
+        }
+      }
+      map_CTX[i] = { 'ctx': context, 'state_ids': valid_states, 'param_ids': valid_formulae }
+    }
+    compute_projection()
+    draw_PS()
+  }
+}
 
 function handleMouseOver_SS(d, i) {
   var div = document.getElementById("infoPanel_SS");
@@ -1472,7 +1638,6 @@ function handleMouseOut_SS(d, i) {
 function handleMouseClick_SS(d, i) {
   if(d3.select(this).attr("fill") != noColor) {
     var sid = d.id
-    // map_CTX[i] = { 'state_ids': valid_states, 'param_ids': valid_formulae }
     var pid = window.result.type == 'smt' ? Object.entries(map_CTX).filter(x => x[1]['state_ids'].has(""+sid) || x[1]['state_ids'].has(Number(sid))).map(x => x[0]) : 
               sid+"x"+map_PS[sid]
     if(!selectedStates.includes(sid)) {
@@ -1505,10 +1670,12 @@ function handleMouseClick_SS(d, i) {
       if(selectedStates.length > 0) {
         // hides the selected parameter regardless of others
         if(window.result.type == 'smt') {
-          for(var p=0,len=pid.length; p<len; ++p)
-            d3.select("#p"+pid[p]).attr("fill-opacity", "0")
+          for(var p=0,len=pid.length; p<len; ++p) {
+            var opac = Number(d3.select("#p"+pid[p]).attr("fill-opacity"))
+            d3.select("#p"+pid[p]).attr("fill-opacity", opac-0.1)
+          }
         } else {
-          d3.select("#p"+pid).attr("fill-opacity", "0")
+          d3.select("#p"+pid).attr("fill-opacity", 0)
         }
       } else {
         // shows all param interval as no state is selected
@@ -1554,10 +1721,18 @@ function draw_PS() {
       for(var i=0, len=d.data.length; i<len; ++i) {
         var r = d.data[i];
         // Y scale is inverted, therefore, we use the the higher threshold as the first one and the lower threshold as the second one
-        if(window.result.type != 'smt')
+        if(window.result.type != 'smt') {
           path += " M"+zoomObject_PS.rescaleX(xScalePS)(r.x[0])+","+zoomObject_PS.rescaleY(yScalePS)(r.y[1])+" H"+zoomObject_PS.rescaleX(xScalePS)(r.x[1])+" V"+zoomObject_PS.rescaleY(yScalePS)(r.y[0])+" H"+zoomObject_PS.rescaleX(xScalePS)(r.x[0])
-        else
-          path += " M"+zoomObject_PS.rescaleX(xScalePS)(r[xDimPS])+","+zoomObject_PS.rescaleY(yScalePS)(r[yDimPS])+" m -"+radius+",0 a"+radius+","+radius+" 0 1,0 "+(2*radius)+",0 a"+radius+","+radius+" 0 1,0 -"+(2*radius)+",0"
+        } else {
+          if(window.bio.vars.includes(xDimPS) || window.bio.vars.includes(yDimPS)) {
+            if(window.bio.vars.includes(xDimPS)) {
+              path += " M"+zoomObject_PS.rescaleX(xScalePS)(r[xDimPS][0])+","+(zoomObject_PS.rescaleY(yScalePS)(r[yDimPS])+radius)+" H"+zoomObject_PS.rescaleX(xScalePS)(r[xDimPS][1])+" V"+(zoomObject_PS.rescaleY(yScalePS)(r[yDimPS])-radius)+" H"+zoomObject_PS.rescaleX(xScalePS)(r[xDimPS][0])
+            } else {
+              path += " M"+(zoomObject_PS.rescaleX(xScalePS)(r[xDimPS])+radius)+","+zoomObject_PS.rescaleY(yScalePS)(r[yDimPS][0])+" V"+zoomObject_PS.rescaleY(yScalePS)(r[yDimPS][1])+" H"+(zoomObject_PS.rescaleX(xScalePS)(r[xDimPS])-radius)+" V"+zoomObject_PS.rescaleY(yScalePS)(r[yDimPS][0])
+            }
+          } else
+            path += " M"+zoomObject_PS.rescaleX(xScalePS)(r[xDimPS])+","+zoomObject_PS.rescaleY(yScalePS)(r[yDimPS])+" m -"+radius+",0 a"+radius+","+radius+" 0 1,0 "+(2*radius)+",0 a"+radius+","+radius+" 0 1,0 -"+(2*radius)+",0"
+        }
       }
       return path;
     })
