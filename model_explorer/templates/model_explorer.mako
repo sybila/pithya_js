@@ -143,7 +143,12 @@
       };
     </script>
 
-    <style>
+    <link rel="stylesheet" type="text/css" href="static/css/bootstrap-reboot.css">
+    <link rel="stylesheet" type="text/css" href="static/css/ion.rangeSlider.css">
+    <link rel="stylesheet" type="text/css" href="static/css/ion.rangeSlider.skinShiny.css">
+    <link rel="stylesheet" type="text/css" href="static/css/simplex2.css">
+    <link rel="stylesheet" type="text/css" href="static/css/style.css">
+    <!--style>
       body {
         background-color: white;
         margin: 0;
@@ -256,7 +261,7 @@
         position: absolute;
         top: 450px;
       }
-    </style>
+    </style-->
   </head>
     
   <body>
