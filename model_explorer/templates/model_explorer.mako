@@ -148,15 +148,15 @@
     <link rel="stylesheet" type="text/css" href="static/css/ion.rangeSlider.skinShiny.css">
     <link rel="stylesheet" type="text/css" href="static/css/simplex2.css">
     <link rel="stylesheet" type="text/css" href="static/css/style.css">
-    <!--style>
+    <style>
       body {
         background-color: white;
-        margin: 0;
+        margin-top: 10px;
         font-family: sans-serif;
-        font-size: 18px;
+        //font-size: 18px;
       }
       #cont_VF {
-        pointer-events: all;
+        //pointer-events: all;
       }
       #zoomObject_VF {
       }
@@ -168,55 +168,30 @@
         font-size: 15px;
       }
       .widget_panel {
-        position: absolute;
-        //top: 10px;
-        left: 560px;
-        //display: flex;
-        //flex-direction: column;
-        height: 100%;
-        width: 250px;
-        
       }
       #resetZoomBtn_VF {
-        position: absolute;
-        top: 10px;
       }
       #resetReachBtn_VF {
-        position: absolute;
-        top: 40px;
       }
       #elongateReachBtn_VF {
-        position: absolute;
-        top: 40px;
-        left: 80px;
       }
       #infoPanel_VF {
-        position: absolute;
-        top: 70px;
-        flex-grow: 1;
+        //flex-grow: 1;
       }
       #x_axis_div {
-        position: absolute;
-        top: 160px;
-        width: 90px;
       }
       #y_axis_div {
-        position: absolute;
-        top: 160px;
-        width: 90px;
-        left: 100px;
       }
       #slidecontainer_VF {
-        position: absolute;
-        top: 200px;
       }
       #inputs_div_VF {
-        position: absolute;
-        top: 450px;
+      }
+      .label {
+        font-size: 15px;
       }
       
       #cont {
-        pointer-events: all;
+        //pointer-events: all;
       }
       #zoomObject {
       }
@@ -230,138 +205,157 @@
         vector-effect: non-scaling-stroke; 
       }
       #resetZoomBtn {
-        position: absolute;
-        top: 10px;
       }
       #resetReachBtn {
-        position: absolute;
-        top: 40px;
       }
       #infoPanel {
-        position: absolute;
-        top: 70px;
-        flex-grow: 1;
+        //flex-grow: 1;
       }
       #x_axis_div {
-        position: absolute;
-        top: 160px;
-        width: 90px;
       }
       #y_axis_div {
-        position: absolute;
-        top: 160px;
-        width: 90px;
-        left: 100px;
       }
       #slidecontainer {
-        position: absolute;
-        top: 200px;
       }
       #inputs_div {
-        position: absolute;
-        top: 450px;
       }
-    </style-->
+    </style>
   </head>
     
   <body>
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-sm-12">
-    				% if len(params) > 0:
-    					% for val in params:
-    					    <% 
-    					    min_val  = float(val[1])
-    					    max_val  = float(val[2])
-    					    step_val = abs(max_val-min_val)*0.001
-    					    %>
-    						<div class="form-group param_slider">
-    							<label class="control-label" for="slider_${val[0]}">Parameter ${val[0]}</label>
-    							<input class="js-range-slider" id="slider_${val[0]}" min=${min_val} max=${max_val} value=${min_val} step=${step_val} data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
-    						</div>
-    					% endfor
-    				% endif
+    <div class="row">
+        <div class="col-sm-12">
+				% if len(params) > 0:
+					% for val in params:
+					    <% 
+					    min_val  = float(val[1])
+					    max_val  = float(val[2])
+					    step_val = abs(max_val-min_val)*0.001
+					    %>
+						<div class="form-group param_slider">
+							<label class="control-label" for="slider_${val[0]}">Parameter ${val[0]}</label>
+							<input class="js-range-slider" id="slider_${val[0]}" min=${min_val} max=${max_val} value=${min_val} step=${step_val} 
+							  data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
+						</div>
+					% endfor
+				% endif
+        </div>
+    </div>
+    <hr>
+    <div class="my-row">
+        <div class="row row-header">
+            <div class="col-sm-1 lab">Horizontal axis</div>
+            <div class="col-sm-2">
+                <select name="xAxis" id="x_axis" class="form-control" required="">
+    					  % for val in vars:
+      						% if val == vars[0]:
+      						  <option value="${val}" selected>${val}</option>
+      						% else:
+      						  <option value="${val}">${val}</option>
+      						% endif
+    					  % endfor
+                </select>
+            </div>
+            <div class="col-sm-1 lab">Vertical axis</div>
+            <div class="col-sm-2">
+                <select name="yAxis" id="y_axis" class="form-control" required="">
+    					  % for val in vars:
+      						% if len(vars) > 1 and val == vars[1]:
+      						  <option value="${val}" selected>${val}</option>
+      						% else:
+      						  <option value="${val}">${val}</option>
+      						% endif
+    					  % endfor
+                </select>
+            </div>
+            <div class="col-sm-1 lab">Colouring orientation</div>
+            <div class="col-sm-2">
+              <select class="form-control" required="" id="input_color_style">
+                <option value="both">both</option>
+                <option value="vertical">vertical</option>
+                <option value="horizontal">horizontal</option>
+                <option value="none">none</option>
+              </select>
             </div>
         </div>
         <hr>
-        <div class="my-row">
-            <div class="row row-header">
-                <div class="col-sm-1 lab">Horizontal axis</div>
-                <div class="col-sm-2">
-                    <select name="xAxis" id="x_axis" class="form-control" required="">
-        					  % for val in vars:
-          						% if val == vars[0]:
-          						  <option value="${val}" selected>${val}</option>
-          						% else:
-          						  <option value="${val}">${val}</option>
-          						% endif
-        					  % endfor
-                    </select>
+        <div class="row nohide">
+            <div class="col-sm-2">
+                <div style="text-align: right;">
+                    <div><button class="btn btn-default" id="resetZoomBtn_VF">Unzoom</button></div>
+                    <div><button class="btn btn-default" id="resetReachBtn_VF">Deselect</button> 
+                         <button class="btn btn-default" id="elongateReachBtn_VF">Elongate</button></div>
                 </div>
-                <div class="col-sm-1 lab">Vertical axis</div>
-                <div class="col-sm-2">
-                    <select name="yAxis" id="y_axis" class="form-control" required="">
-        					  % for val in vars:
-          						% if len(vars) > 1 and val == vars[1]:
-          						  <option value="${val}" selected>${val}</option>
-          						% else:
-          						  <option value="${val}">${val}</option>
-          						% endif
-        					  % endfor
-                    </select>
-                </div>
-                <div class="col-sm-1 lab">Colouring orientation</div>
-                <div class="col-sm-2">
-                  <select class="form-control" required="" id="input_color_style_VF">
-                    <option value="both">both</option>
-                    <option value="vertical">vertical</option>
-                    <option value="horizontal">horizontal</option>
-                    <option value="none">none</option>
-                  </select>
+                <pre id="infoPanel_VF"></pre>
+                % if len(vars) > 2:
+                  % for val in vars:
+                    <% 
+                    min_val  = min(map(float,thrs[val]))
+                    max_val  = max(map(float,thrs[val]))
+                    step_val = abs(max_val-min_val)*0.01
+                    %>
+                    % if val == vars[0] or val == vars[1]:
+                      <div class="form-group param_slider" id="slider_${val}_wrapper_VF" hidden>
+                    % else:
+                      <div class="form-group param_slider" id="slider_${val}_wrapper_VF">
+                    % endif
+          							<label class="control-label" for="slider_${val}_VF" id="text_${val}_VF">Value of ${val}</label>
+          							<input class="js-range-slider" id="slider_${val}_VF" min=${min_val} max=${max_val} value=${min_val} step=${step_val} 
+          							  data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
+          						</div>
+                  % endfor
+                % endif
+                <div id="inputs_div">
+                    <div class="form-group">
+                        <label class="control-label" for="input_gridSize_VF">Arrows count</label>
+                        <input class="js-range-slider" id="input_gridSize_VF" min="10" max="100" value="25" step="1" 
+                          data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label" for="input_dt_VF">Derivative scale</label>
+                        <input class="js-range-slider" id="input_dt_VF" min="0.01" max="1" value="1" step="0.01" 
+                          data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label" for="input_color_thr_VF">Colouring threshold</label>
+                        <input class="js-range-slider" id="input_color_thr_VF" min="0" max="0.1" value="0.05" step="0.01" 
+                          data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
+                    </div>
                 </div>
             </div>
-            <hr>
-            <div class="row nohide">
-                <div class="col-sm-2">
-                    <div style="text-align: right;">
-                        <div><button class="btn btn-default" id="resetZoomBtn_VF">Unzoom</button></div>
-                        <div><button class="btn btn-default" disabled id="resetReachBtn_VF">Deselect</button> <button class="btn btn-default" disabled id="elongateReachBtn_VF">Elongate</button></div>
-                    </div>
-                    <pre id="infoPanel_VF"></pre>
-                    <div id="inputs_div">
-                        <div class="form-group">
-                            <label class="control-label" for="input_gridSize_VF">Arrows count</label>
-                            <input class="js-range-slider" id="input_gridSize_VF" min="10" max="100" value="25" step="1" data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
-                        </div>
-                        <div class="form-group">
-                            <label class="control-label" for="input_dt_VF">Derivative scale</label>
-                            <input class="js-range-slider" id="input_dt_VF" min="0.01" max="1" value="1" step="0.01" data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
-                        </div>
-                        <div class="form-group">
-                            <label class="control-label" for="input_color_thr_VF">Colouring threshold</label>
-                            <input class="js-range-slider" id="input_color_thr_VF" min="0" max="0.1" value="0.05" step="0.01" data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
-                        </div>
-                    </div>
+            <div class="col-sm-4 visual" id="plot_vf"></div>
+            <div class="col-sm-4 visual" id="plot_tss"></div>
+            <div class="col-sm-2">
+                <div>
+                    <div><button class="btn btn-default" id="resetZoomBtn">Unzoom</button></div>
+                    <div><button class="btn btn-default" id="resetReachBtn">Deselect</button></div>
                 </div>
-                <div class="col-sm-4 visual" id="plot_vf"></div>
-                <div class="col-sm-4 visual" id="plot_tss"></div>
-                <div class="col-sm-2">
-                    <div>
-                        <div><button class="btn btn-default" id="resetZoomBtn">Unzoom</button></div>
-                        <div><button class="btn btn-default" disabled id="resetReachBtn">Deselect</button></div>
-                    </div>
-                    <pre id="infoPanel"></pre>
-                </div>
+                <pre id="infoPanel"></pre>
+                % if len(vars) > 2:
+                  % for val in vars:
+                    <% 
+                    print(val)
+                    min_val  = min(map(float,thrs[val]))
+                    max_val  = max(map(float,thrs[val]))
+                    step_val = abs(max_val-min_val)*0.01
+                    %>
+                    % if val == vars[0] or val == vars[1]:
+                      <div class="form-group param_slider" id="slider_${val}_wrapper" hidden>
+                    % else:
+                      <div class="form-group param_slider" id="slider_${val}_wrapper">
+                    % endif
+          							<label class="control-label" for="slider_${val}" id="text_${val}">Value of ${val}</label>
+          							<input class="js-range-slider" id="slider_${val}" min=${min_val} max=${max_val} value=${min_val} step=${step_val} 
+          							  data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
+          						</div>
+                  % endfor
+                % endif
             </div>
         </div>
     </div>
     
     <!--div class="widget_panel">
-      <button id="resetZoomBtn_VF">Unzoom</button>
-      <button id="resetReachBtn_VF">Deselect</button>
-      <button id="elongateReachBtn_VF">Elongate</button>
-      <textarea id="infoPanel_VF" rows="${len(vars)+2}" cols="35" wrap="off" disabled></textarea>
-      <!-- dynamicly adds sliders with labels for parameters and variables (if more than 2 vars are present) in mako style -->
+      <!-- dynamicly adds sliders with labels for parameters and variables (if more than 2 vars are present) in mako style>
       % if len(vars) > 2 or len(params) > 0:
         <div id="slidecontainer_VF">
         % if len(vars) > 2:
@@ -396,51 +390,8 @@
         % endif
         </div>
       % endif
-      <div id="inputs_div_VF">
-        <hr>
-        arrows count: <span id="text_gridSize_VF"></span><br>
-        <input type="range" min=10 max=100 value=25 step=1 class="slider" id="input_gridSize_VF"><br>
-        derivative scale: <span id="text_dt_VF"></span><br>
-        <input type="range" min=0.01 max=1 value=1 step=0.01 class="slider" id="input_dt_VF"><br>
-        colouring threshold: <span id="text_color_thr_VF"></span><br>
-        <input type="range" min=0 max=0.1 value=0.05 step=0.01 class="slider" id="input_color_thr_VF"><br>
-        colouring orientation<br>
-        <select id="input_color_style_VF">
-          <option value="both">both</option>
-          <option value="vertical">vertical</option>
-          <option value="horizontal">horizontal</option>
-          <option value="none">none</option>
-        </select><br>
-      </div>
       
-      <button id="resetZoomBtn">Unzoom</button>
-      <button id="resetReachBtn">Deselect</button>
-      <textarea id="infoPanel" rows="${len(vars)+1}" cols="35" wrap="off" disabled></textarea>
-      <!-- dynamicly adds sliders with labels for parameters and variables (if more than 2 vars are present) in mako style -->
-      <div id="x_axis_div">
-        X axis<br>
-        <select name="xAxis" id="x_axis" style="width:90px" required>
-          % for val in vars:
-            % if val == vars[0]:
-              <option value="${val}" selected>${val}</option>
-            % else:
-              <option value="${val}">${val}</option>
-            % endif
-          % endfor
-        </select>
-      </div>
-      <div id="y_axis_div">
-        Y axis<br>
-        <select name="yAxis" id="y_axis" style="width:90px" required>
-          % for val in vars:
-            % if len(vars) > 1 and val == vars[1]:
-              <option value="${val}" selected>${val}</option>
-            % else:
-              <option value="${val}">${val}</option>
-            % endif
-          % endfor
-        </select>
-      </div>
+      <!-- dynamicly adds sliders with labels for parameters and variables (if more than 2 vars are present) in mako style>
       % if len(vars) > 2 or len(params) > 0:
         <div id="slidecontainer">
         % if len(vars) > 2:
@@ -485,12 +436,11 @@ var width = d3.select("#plot_vf").property("offsetWidth"),
     params = {},
     dt_VF = Number(d3.select("#input_dt_VF").property("value")),
     traj_dt_VF = 0.1,
-    color_style_VF = d3.select("#input_color_style_VF").property("value"),
     color_thr_VF = Number(d3.select("#input_color_thr_VF").property("value")),
     gridSize_VF = Number(d3.select("#input_gridSize_VF").property("value")),
     
     multiarr = [],
-    color_style = document.getElementById("input_color_style").value;
+    color_style = d3.select("#input_color_style").property("value");
 
 // initial values according to the sliders setting
 window.bio.params.map(x => params[x[0]] = x[1]);
@@ -499,9 +449,7 @@ window.bio.params.map(x => params[x[0]] = x[1]);
 % if len(vars) > 2:
   % for val in vars:
       (function(i) {
-          d3.select("#text_"+i+"_VF").html(d3.select("#slider_"+i+"_VF").property("value"));
           d3.select("#slider_"+i+"_VF").on("input", function() {
-              d3.select("#text_"+i+"_VF").html(this.value);
               zoomed_VF();
           })
       })('${val}');
@@ -512,9 +460,7 @@ window.bio.params.map(x => params[x[0]] = x[1]);
 % if len(params) > 0:
   % for val in params:
       (function(i) {
-          d3.select("#text_"+i[0]).html(d3.select("#slider_"+i[0]).property("value"));
           d3.select("#slider_"+i[0]).on("input", function() {
-              d3.select("#text_"+i[0]).html(this.value);
               // fill parameters with current values
               params[i[0]] = Number(d3.select("#slider_"+i[0]).property("value")); // according to slider for parameters
               zoomed_VF();
@@ -530,32 +476,20 @@ window.bio.params.map(x => params[x[0]] = x[1]);
 % endif
 
 // sets text value for slider of arrows_count and adds event listener for change of slider
-d3.select("#text_gridSize_VF").html(d3.select("#input_gridSize_VF").property("value"));
 d3.select('#input_gridSize_VF').on("input", function() {
-  d3.select("#text_gridSize_VF").html(this.value);
   gridSize_VF = Number(this.value);
   zoomed_VF();
 });
 
 // sets text value for slider of derivative_scale and adds event listener for change of slider
-d3.select("#text_dt_VF").html(d3.select("#input_dt_VF").property("value"));
 d3.select('#input_dt_VF').on("input", function() {
-  d3.select("#text_dt_VF").html(this.value);
   dt_VF = Number(this.value);
   zoomed_VF();
 });
 
 // sets text value for slider of colouring_threshold and adds event listener for change of slider
-d3.select("#text_color_thr_VF").html(d3.select("#input_color_thr_VF").property("value"));
 d3.select('#input_color_thr_VF').on("input", function() {
-  d3.select("#text_color_thr_VF").html(this.value);
   color_thr_VF = Number(this.value);
-  zoomed_VF();
-});
-
-// adds event listener for change of colouring_orientation
-d3.select('#input_color_style_VF').on("input", function() {
-  color_style_VF = this.value;
   zoomed_VF();
 });
 
@@ -631,10 +565,7 @@ d3.select('#resetZoomBtn_VF')
 % if len(vars) > 2:
   % for val in vars:
       (function(i) {
-          d3.select("#text_"+i).html(d3.select("#slider_"+i).property("value"));
           d3.select("#slider_"+i).on("input", function() {
-              d3.select("#text_"+i).html(this.value);
-              
               transform_tss();
               draw();
               zoomed();
@@ -647,6 +578,7 @@ d3.select('#resetZoomBtn_VF')
 // adds event listener for change of colouring_orientation
 d3.select('#input_color_style').on("input", function() {
   color_style = this.value;
+  zoomed_VF();
   transform_tss();
   draw();
   zoomed();
@@ -722,6 +654,7 @@ function initiate_VF() {
   
   container_VF = svg_VF.append("g")
       .attr("id","cont_VF")
+      .attr("pointer-events", "all")
       //.attr("transform", "translate("+(margin.left)+","+(margin.top)+")")
       .call(zoom_VF);
           
@@ -859,8 +792,8 @@ function initiate_TSS() {
       .on("end", brushedY);
   
   zoom = d3.zoom()
-            //.scaleExtent([1, Infinity])
-            //.translateExtent([[0,0],[width,height]])
+            .scaleExtent([1, 100000])
+            .translateExtent([[0,0],[width,height]])
             .on("zoom", zoomed);
   svg = d3.select("#plot_tss").append("svg")
       .attr("width", width)
@@ -868,6 +801,9 @@ function initiate_TSS() {
   
   container = svg.append("g")
           .attr("id","cont")
+          .attr("pointer-events", "all")
+      .attr("width", width-margin.left-margin.right)
+      .attr("height", height-margin.top-margin.bottom)
           //.attr("transform", "translate("+(margin.left)+","+(margin.top)+")")
           .call(zoom);
   
@@ -959,7 +895,7 @@ function generateGrid_VF() {
       for (const [key, eq] of Object.entries(window.bio.eqs)) {
         diffs[key] = Number(eq(vars, params));
       }
-      var direction = (color_style_VF == "both" ? diffs[xDim]+diffs[yDim] : (color_style_VF == "vertical" ? diffs[yDim] : (color_style_VF == "horizontal" ? diffs[xDim] : 0)));
+      var direction = (color_style == "both" ? diffs[xDim]+diffs[yDim] : (color_style == "vertical" ? diffs[yDim] : (color_style == "horizontal" ? diffs[xDim] : 0)));
       vectors_VF.push({
         id: i*xp.length+j,
         x0: zoomObject_VF.rescaleX(xScale_VF)(xp[j]),
@@ -974,10 +910,10 @@ function generateGrid_VF() {
 }
    
 function update_axes_VF() {
-  // Update axes labels according to selected diemnsions
+  // Update axes labels according to selected dimensions
   d3.select('#xLabel_VF').text(xDim);
   d3.select('#ylabel_VF').text(yDim);
-  // Update scales according to selected diemnsions
+  // Update scales according to selected dimensions
   xScale_VF.domain([d3.min(thrs[xDim],parseFloat),
                  d3.max(thrs[xDim],parseFloat)])
 
