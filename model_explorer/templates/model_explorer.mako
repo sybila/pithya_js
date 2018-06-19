@@ -265,7 +265,98 @@
   </head>
     
   <body>
-    <div class="widget_panel">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-12">
+    				% if len(params) > 0:
+    					% for val in params:
+    					    <% 
+    					    min_val  = float(val[1])
+    					    max_val  = float(val[2])
+    					    step_val = abs(max_val-min_val)*0.001
+    					    %>
+    						<div class="form-group param_slider">
+    							<label class="control-label" for="slider_${val[0]}">Parameter ${val[0]}</label>
+    							<input class="js-range-slider" id="slider_${val[0]}" min=${min_val} max=${max_val} value=${min_val} step=${step_val} data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
+    						</div>
+    					% endfor
+    				% endif
+            </div>
+        </div>
+        <hr>
+        <div class="my-row">
+            <div class="row row-header">
+                <div class="col-sm-1 lab">Horizontal axis</div>
+                <div class="col-sm-2">
+                    <select name="xAxis" id="x_axis" class="form-control" required="">
+        					  % for val in vars:
+          						% if val == vars[0]:
+          						  <option value="${val}" selected>${val}</option>
+          						% else:
+          						  <option value="${val}">${val}</option>
+          						% endif
+        					  % endfor
+                    </select>
+                </div>
+                <div class="col-sm-1 lab">Vertical axis</div>
+                <div class="col-sm-2">
+                    <select name="yAxis" id="y_axis" class="form-control" required="">
+        					  % for val in vars:
+          						% if len(vars) > 1 and val == vars[1]:
+          						  <option value="${val}" selected>${val}</option>
+          						% else:
+          						  <option value="${val}">${val}</option>
+          						% endif
+        					  % endfor
+                    </select>
+                </div>
+                <div class="col-sm-1 lab">Colouring orientation</div>
+                <div class="col-sm-2">
+                  <select class="form-control" required="" id="input_color_style_VF">
+                    <option value="both">both</option>
+                    <option value="vertical">vertical</option>
+                    <option value="horizontal">horizontal</option>
+                    <option value="none">none</option>
+                  </select>
+                </div>
+            </div>
+            <hr>
+            <div class="row nohide">
+                <div class="col-sm-2">
+                    <div style="text-align: right;">
+                        <div><button class="btn btn-default" id="resetZoomBtn_VF">Unzoom</button></div>
+                        <div><button class="btn btn-default" disabled id="resetReachBtn_VF">Deselect</button> <button class="btn btn-default" disabled id="elongateReachBtn_VF">Elongate</button></div>
+                    </div>
+                    <pre id="infoPanel_VF"></pre>
+                    <div id="inputs_div">
+                        <div class="form-group">
+                            <label class="control-label" for="input_gridSize_VF">Arrows count</label>
+                            <input class="js-range-slider" id="input_gridSize_VF" min="10" max="100" value="25" step="1" data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label" for="input_dt_VF">Derivative scale</label>
+                            <input class="js-range-slider" id="input_dt_VF" min="0.01" max="1" value="1" step="0.01" data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label" for="input_color_thr_VF">Colouring threshold</label>
+                            <input class="js-range-slider" id="input_color_thr_VF" min="0" max="0.1" value="0.05" step="0.01" data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4 visual" id="plot_vf"></div>
+                <div class="col-sm-4 visual" id="plot_tss"></div>
+                <div class="col-sm-2">
+                    <div>
+                        <div><button class="btn btn-default" id="resetZoomBtn">Unzoom</button></div>
+                        <div><button class="btn btn-default" disabled id="resetReachBtn">Deselect</button></div>
+                    </div>
+                    <pre id="infoPanel"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!--div class="widget_panel">
       <button id="resetZoomBtn_VF">Unzoom</button>
       <button id="resetReachBtn_VF">Deselect</button>
       <button id="elongateReachBtn_VF">Elongate</button>
@@ -382,11 +473,13 @@
           <option value="none">none</option>
         </select><br>
       </div>
-    </div>
+    </div-->
     
     <script type="text/javascript" charset="utf-8">
     
-var xDim = document.getElementById("x_axis").value,
+var width = d3.select("#plot_vf").property("offsetWidth"),
+    height = d3.select("#plot_vf").property("offsetWidth"),
+    xDim = document.getElementById("x_axis").value,
     yDim = document.getElementById("y_axis").value,
     thrs = window.bio.thrs,
     params = {},
@@ -504,6 +597,25 @@ d3.select("#y_axis").on("change", function() {
   if(reach_start !== null) handleMouseClick(null,reach_start);
 });
 
+// event listener fr width change of plots (they should be of same size)
+d3.select(window).on("resize", function() {
+  var newWidth = d3.select("#plot_vf").property("offsetWidth")
+  if(newWidth != width) {
+    width = newWidth
+    height = newWidth
+    d3.selectAll("svg").remove()
+    initiate_TSS()
+    compute_tss()
+    transform_tss()
+    draw()
+    fill_info_panel_outside()
+    
+    initiate_VF()
+    generateGrid_VF()
+    draw_VF()
+  }
+})
+
 // event listeners for buttons
 d3.select('#resetReachBtn_VF')
     .on("click", resettedReach_VF);
@@ -550,9 +662,7 @@ d3.select('#resetZoomBtn')
 
 //###################################################  
 
-var width = 550,
-    height = 550,
-    margin = { top: 10, right: 10, bottom: 50, left: 50 },
+var margin = { top: 10, right: 10, bottom: 50, left: 50 },
     arrowlen = 3,
     noColor = "transparent",
     reachColor_TS = "rgba(65, 105, 225, 0.6)", // "royalblue with opacity"
@@ -580,135 +690,137 @@ var width = 550,
     trans_dir = {},
     zoomObject = d3.zoomIdentity;
 
-// d3 objects definitions
-var xScale_VF = d3.scaleLinear()
-              .domain([d3.min(thrs[xDim],parseFloat),
-                       d3.max(thrs[xDim],parseFloat)])
-              .range([margin.left, width - margin.right]);
-
-var yScale_VF = d3.scaleLinear()
-              .domain([d3.min(thrs[yDim],parseFloat),
-                       d3.max(thrs[yDim],parseFloat)])
-              .range([height - margin.bottom, margin.top]);
-
-
-var brushX_VF = d3.brushX()
-    .extent([[margin.left, 0], [width-margin.right, margin.bottom]])
-    .on("end", brushedX_VF),
-    
-    brushY_VF = d3.brushY()
-    .extent([[-margin.left, margin.top], [0, height-margin.bottom]])
-    .on("end", brushedY_VF);
-
-var zoom_VF = d3.zoom()
-    .scaleExtent([0.1, 100000])   // TODO: better specification
-    //.translateExtent([[0,0],[width,height]])
-    .on("zoom", zoomed_VF);
+function initiate_VF() {
+  // d3 objects definitions
+  xScale_VF = d3.scaleLinear()
+                .domain([d3.min(thrs[xDim],parseFloat),
+                         d3.max(thrs[xDim],parseFloat)])
+                .range([margin.left, width - margin.right]);
+  
+  yScale_VF = d3.scaleLinear()
+                .domain([d3.min(thrs[yDim],parseFloat),
+                         d3.max(thrs[yDim],parseFloat)])
+                .range([height - margin.bottom, margin.top]);
+  
+  
+  brushX_VF = d3.brushX()
+      .extent([[margin.left, 0], [width-margin.right, margin.bottom]])
+      .on("end", brushedX_VF),
+      
+      brushY_VF = d3.brushY()
+      .extent([[-margin.left, margin.top], [0, height-margin.bottom]])
+      .on("end", brushedY_VF);
+  
+  zoom_VF = d3.zoom()
+      .scaleExtent([0.1, 100000])   // TODO: better specification
+      //.translateExtent([[0,0],[width,height]])
+      .on("zoom", zoomed_VF);
+            
+  svg_VF = d3.select("#plot_vf").append("svg")
+      .attr("width", width)
+      .attr("height", height);
+  
+  container_VF = svg_VF.append("g")
+      .attr("id","cont_VF")
+      //.attr("transform", "translate("+(margin.left)+","+(margin.top)+")")
+      .call(zoom_VF);
           
-var svg_VF = d3.select("body").append("svg")
-    .attr("width", width)
-    .attr("height", height);
-
-var container_VF = svg_VF.append("g")
-    .attr("id","cont_VF")
-    //.attr("transform", "translate("+(margin.left)+","+(margin.top)+")")
-    .call(zoom_VF);
-        
-var defs_VF = svg_VF.append("svg:defs");
-defs_VF.append("svg:marker")
-		.attr("id", "neutralArrow")
-		.attr("viewBox", "0 "+(-0.5*arrowlen)+" "+arrowlen+" "+arrowlen)
-		.attr("refX", 0.5*arrowlen)
-		.attr("refY", 0)
-		.attr("markerWidth", arrowlen)
-		.attr("markerHeight", arrowlen)
-		.attr("orient","auto")
-    .append("svg:path")
-      .attr("fill", neutral_col)
-			.attr("d", "M0,"+(-0.5*arrowlen)+" L"+arrowlen+",0 L0,"+(0.5*arrowlen))
-			.attr("class","arrowHead");
-defs_VF.append("svg:marker")
-		.attr("id", "positiveArrow")
-		.attr("viewBox", "0 "+(-0.5*arrowlen)+" "+arrowlen+" "+arrowlen)
-		.attr("refX", 0.5*arrowlen)
-		.attr("refY", 0)
-		.attr("markerWidth", arrowlen)
-		.attr("markerHeight", arrowlen)
-		.attr("orient","auto")
-    .append("svg:path")
-      .attr("fill", positive_col)
-			.attr("d", "M0,"+(-0.5*arrowlen)+" L"+arrowlen+",0 L0,"+(0.5*arrowlen))
-			.attr("class","arrowHead");
-defs_VF.append("svg:marker")
-		.attr("id", "negativeArrow")
-		.attr("viewBox", "0 "+(-0.5*arrowlen)+" "+arrowlen+" "+arrowlen)
-		.attr("refX", 0.5*arrowlen)
-		.attr("refY", 0)
-		.attr("markerWidth", arrowlen)
-		.attr("markerHeight", arrowlen)
-		.attr("orient","auto")
-    .append("svg:path")
-      .attr("fill", negative_col)
-			.attr("d", "M0,"+(-0.5*arrowlen)+" L"+arrowlen+",0 L0,"+(0.5*arrowlen))
-			.attr("class","arrowHead");
-defs_VF.append("svg:marker")
-		.attr("id", "reachArrow")
-		.attr("viewBox", "0 "+(-0.5*arrowlen)+" "+arrowlen+" "+arrowlen)
-		.attr("refX", 0.5*arrowlen)
-		.attr("refY", 0)
-		.attr("markerWidth", arrowlen)
-		.attr("markerHeight", arrowlen)
-		.attr("orient","auto")
-    .append("svg:path")
-      .attr("fill", reachColor_VF)
-			.attr("d", "M0,"+(-0.5*arrowlen)+" L"+arrowlen+",0 L0,"+(0.5*arrowlen))
-			.attr("class","reachArrowHead");
-
-var xLabel_VF = svg_VF.append("text")
-    .attr("id", "xLabel_VF")
-    .attr("class", "label")
-    .attr("x", width*0.5)
-    .attr("y", height-10)
-    .attr("stroke", "black")
-    .text(function() { return xDim; });
-var ylabel_VF = svg_VF.append("text")
-    .attr("id", "ylabel_VF")
-    .attr("class", "label")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -width*0.5)
-    .attr("y", 15)
-    .attr("stroke", "black")
-    .text(function() { return yDim; });
-
-var bottomPanel_VF = svg_VF.append("g")
-    .attr("id", "bPanel_VF")
-    .attr("class", "panel")
-    .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")");
-    
-var xAxis_VF = d3.axisBottom(xScale_VF);
-var gX_VF = bottomPanel_VF.append("g")
-    .attr("id", "xAxis_VF")
-    .attr("class", "axis")
-    .call(xAxis_VF); // Create an axis component with d3.axisBottom
-var gBX_VF = bottomPanel_VF.append("g")
-    .attr("id", "xBrush_VF")
-    .attr("class", "brush")
-    .call(brushX_VF);
-    
-var leftPanel_VF = svg_VF.append("g")
-    .attr("id", "lPanel_VF")
-    .attr("class", "panel")
-    .attr("transform", "translate("+margin.left+","+0+")");
-
-var yAxis_VF = d3.axisLeft(yScale_VF);
-var gY_VF = leftPanel_VF.append("g")
-    .attr("id", "yAxis_VF")
-    .attr("class", "axis")
-    .call(yAxis_VF); // Create an axis component with d3.axisLeft
-var gBY_VF = leftPanel_VF.append("g")
-    .attr("id", "yBrush_VF")
-    .attr("class", "brush")
-    .call(brushY_VF);
+  defs_VF = svg_VF.append("svg:defs");
+  defs_VF.append("svg:marker")
+  		.attr("id", "neutralArrow")
+  		.attr("viewBox", "0 "+(-0.5*arrowlen)+" "+arrowlen+" "+arrowlen)
+  		.attr("refX", 0.5*arrowlen)
+  		.attr("refY", 0)
+  		.attr("markerWidth", arrowlen)
+  		.attr("markerHeight", arrowlen)
+  		.attr("orient","auto")
+      .append("svg:path")
+        .attr("fill", neutral_col)
+  			.attr("d", "M0,"+(-0.5*arrowlen)+" L"+arrowlen+",0 L0,"+(0.5*arrowlen))
+  			.attr("class","arrowHead");
+  defs_VF.append("svg:marker")
+  		.attr("id", "positiveArrow")
+  		.attr("viewBox", "0 "+(-0.5*arrowlen)+" "+arrowlen+" "+arrowlen)
+  		.attr("refX", 0.5*arrowlen)
+  		.attr("refY", 0)
+  		.attr("markerWidth", arrowlen)
+  		.attr("markerHeight", arrowlen)
+  		.attr("orient","auto")
+      .append("svg:path")
+        .attr("fill", positive_col)
+  			.attr("d", "M0,"+(-0.5*arrowlen)+" L"+arrowlen+",0 L0,"+(0.5*arrowlen))
+  			.attr("class","arrowHead");
+  defs_VF.append("svg:marker")
+  		.attr("id", "negativeArrow")
+  		.attr("viewBox", "0 "+(-0.5*arrowlen)+" "+arrowlen+" "+arrowlen)
+  		.attr("refX", 0.5*arrowlen)
+  		.attr("refY", 0)
+  		.attr("markerWidth", arrowlen)
+  		.attr("markerHeight", arrowlen)
+  		.attr("orient","auto")
+      .append("svg:path")
+        .attr("fill", negative_col)
+  			.attr("d", "M0,"+(-0.5*arrowlen)+" L"+arrowlen+",0 L0,"+(0.5*arrowlen))
+  			.attr("class","arrowHead");
+  defs_VF.append("svg:marker")
+  		.attr("id", "reachArrow")
+  		.attr("viewBox", "0 "+(-0.5*arrowlen)+" "+arrowlen+" "+arrowlen)
+  		.attr("refX", 0.5*arrowlen)
+  		.attr("refY", 0)
+  		.attr("markerWidth", arrowlen)
+  		.attr("markerHeight", arrowlen)
+  		.attr("orient","auto")
+      .append("svg:path")
+        .attr("fill", reachColor_VF)
+  			.attr("d", "M0,"+(-0.5*arrowlen)+" L"+arrowlen+",0 L0,"+(0.5*arrowlen))
+  			.attr("class","reachArrowHead");
+  
+  xLabel_VF = svg_VF.append("text")
+      .attr("id", "xLabel_VF")
+      .attr("class", "label")
+      .attr("x", width*0.5)
+      .attr("y", height-10)
+      .attr("stroke", "black")
+      .text(function() { return xDim; });
+  ylabel_VF = svg_VF.append("text")
+      .attr("id", "ylabel_VF")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("x", -width*0.5)
+      .attr("y", 15)
+      .attr("stroke", "black")
+      .text(function() { return yDim; });
+  
+  bottomPanel_VF = svg_VF.append("g")
+      .attr("id", "bPanel_VF")
+      .attr("class", "panel")
+      .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")");
+      
+  xAxis_VF = d3.axisBottom(xScale_VF);
+  gX_VF = bottomPanel_VF.append("g")
+      .attr("id", "xAxis_VF")
+      .attr("class", "axis")
+      .call(xAxis_VF); // Create an axis component with d3.axisBottom
+  gBX_VF = bottomPanel_VF.append("g")
+      .attr("id", "xBrush_VF")
+      .attr("class", "brush")
+      .call(brushX_VF);
+      
+  leftPanel_VF = svg_VF.append("g")
+      .attr("id", "lPanel_VF")
+      .attr("class", "panel")
+      .attr("transform", "translate("+margin.left+","+0+")");
+  
+  yAxis_VF = d3.axisLeft(yScale_VF);
+  gY_VF = leftPanel_VF.append("g")
+      .attr("id", "yAxis_VF")
+      .attr("class", "axis")
+      .call(yAxis_VF); // Create an axis component with d3.axisLeft
+  gBY_VF = leftPanel_VF.append("g")
+      .attr("id", "yBrush_VF")
+      .attr("class", "brush")
+      .call(brushY_VF);
+}
     
     
 // trans_dir example:
@@ -727,90 +839,94 @@ var gBY_VF = leftPanel_VF.append("g")
 //   3:[3]
 // };
 
-var xScale = d3.scaleLinear()
-  .domain([d3.min(thrs[xDim],parseFloat),
-           d3.max(thrs[xDim],parseFloat)])
-  .range([margin.left, width - margin.right]);
+function initiate_TSS() {
+  xScale = d3.scaleLinear()
+    .domain([d3.min(thrs[xDim],parseFloat),
+             d3.max(thrs[xDim],parseFloat)])
+    .range([margin.left, width - margin.right]);
+  
+  yScale = d3.scaleLinear()
+    .domain([d3.min(thrs[yDim],parseFloat),
+             d3.max(thrs[yDim],parseFloat)])
+    .range([height - margin.bottom, margin.top]);
+  
+  brushX = d3.brushX()
+      .extent([[margin.left, 0], [width-margin.right, margin.bottom]])
+      .on("end", brushedX),
+      
+      brushY = d3.brushY()
+      .extent([[-margin.left, margin.top], [0, height-margin.bottom]])
+      .on("end", brushedY);
+  
+  zoom = d3.zoom()
+            //.scaleExtent([1, Infinity])
+            //.translateExtent([[0,0],[width,height]])
+            .on("zoom", zoomed);
+  svg = d3.select("#plot_tss").append("svg")
+      .attr("width", width)
+      .attr("height", height);
+  
+  container = svg.append("g")
+          .attr("id","cont")
+          //.attr("transform", "translate("+(margin.left)+","+(margin.top)+")")
+          .call(zoom);
+  
+  xLabel = svg.append("text")
+      .attr("id", "xlabel")
+      .attr("class", "label")
+      .attr("x", width*0.5)
+      .attr("y", height-10)
+      .attr("stroke", "black")
+      .text(function() { return xDim; });
+  yLabel = svg.append("text")
+      .attr("id", "ylabel")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("x", -width*0.5)
+      .attr("y", 15)
+      .attr("stroke", "black")
+      .text(function() { return yDim; });
+  
+  bottomPanel = svg.append("g")
+      .attr("id", "bPanel")
+      .attr("class", "panel")
+      .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")");
+      
+  xAxis = d3.axisBottom(xScale);
+  gX = bottomPanel.append("g")
+      .attr("id", "xAxis")
+      .attr("class", "axis")
+      .call(xAxis); // Create an axis component with d3.axisBottom
+  gBX = bottomPanel.append("g")
+      .attr("id", "xBrush")
+      .attr("class", "brush")
+      .call(brushX);
+      
+  leftPanel = svg.append("g")
+      .attr("id", "lPanel")
+      .attr("class", "panel")
+      .attr("transform", "translate("+margin.left+","+0+")");
+  
+  yAxis = d3.axisLeft(yScale);
+  gY = leftPanel.append("g")
+      .attr("id", "yAxis")
+      .attr("class", "axis")
+      .call(yAxis); // Create an axis component with d3.axisLeft
+  gBY = leftPanel.append("g")
+      .attr("id", "xBrush")
+      .attr("class", "brush")
+      .call(brushY);
+}
 
-var yScale = d3.scaleLinear()
-  .domain([d3.min(thrs[yDim],parseFloat),
-           d3.max(thrs[yDim],parseFloat)])
-  .range([height - margin.bottom, margin.top]);
+initiate_TSS()
+compute_tss()
+transform_tss()
+draw()
+fill_info_panel_outside()
 
-var brushX = d3.brushX()
-    .extent([[margin.left, 0], [width-margin.right, margin.bottom]])
-    .on("end", brushedX),
-    
-    brushY = d3.brushY()
-    .extent([[-margin.left, margin.top], [0, height-margin.bottom]])
-    .on("end", brushedY);
-
-var zoom = d3.zoom()
-          //.scaleExtent([1, Infinity])
-          //.translateExtent([[0,0],[width,height]])
-          .on("zoom", zoomed);
-var svg = d3.select("body").append("svg")
-    .attr("width", width)
-    .attr("height", height);
-
-var container = svg.append("g")
-        .attr("id","cont")
-        //.attr("transform", "translate("+(margin.left)+","+(margin.top)+")")
-        .call(zoom);
-
-var xLabel = svg.append("text")
-    .attr("id", "xlabel")
-    .attr("class", "label")
-    .attr("x", width*0.5)
-    .attr("y", height-10)
-    .attr("stroke", "black")
-    .text(function() { return xDim; });
-var yLabel = svg.append("text")
-    .attr("id", "ylabel")
-    .attr("class", "label")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -width*0.5)
-    .attr("y", 15)
-    .attr("stroke", "black")
-    .text(function() { return yDim; });
-
-var bottomPanel = svg.append("g")
-    .attr("id", "bPanel")
-    .attr("class", "panel")
-    .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")");
-    
-var xAxis = d3.axisBottom(xScale);
-var gX = bottomPanel.append("g")
-    .attr("id", "xAxis")
-    .attr("class", "axis")
-    .call(xAxis); // Create an axis component with d3.axisBottom
-var gBX = bottomPanel.append("g")
-    .attr("id", "xBrush")
-    .attr("class", "brush")
-    .call(brushX);
-    
-var leftPanel = svg.append("g")
-    .attr("id", "lPanel")
-    .attr("class", "panel")
-    .attr("transform", "translate("+margin.left+","+0+")");
-
-var yAxis = d3.axisLeft(yScale);
-var gY = leftPanel.append("g")
-    .attr("id", "yAxis")
-    .attr("class", "axis")
-    .call(yAxis); // Create an axis component with d3.axisLeft
-var gBY = leftPanel.append("g")
-    .attr("id", "xBrush")
-    .attr("class", "brush")
-    .call(brushY);
-
-compute_tss();
-transform_tss();
-draw();
-fill_info_panel_outside();
-
-generateGrid_VF();
-draw_VF();
+initiate_VF()
+generateGrid_VF()
+draw_VF()
     
 // ################# definitions of functions #################
     
@@ -948,7 +1064,7 @@ function handleMouseOver_VF(d, i) {
     var key = window.bio.vars[v];
     content += "\n"+key+": "+(vars[key].toFixed(3))+"\td["+key+"]: "+(diffs[key].toFixed(3));
   }
-  div.value = content;
+  div.innerHTML = content;
 }
 function handleMouseOut_VF(d, i) {
   var div = document.getElementById("infoPanel_VF");
@@ -959,7 +1075,7 @@ function handleMouseOut_VF(d, i) {
     var value = key == xDim ? zoomObject_VF.rescaleX(xScale_VF).domain() : (key == yDim ? zoomObject_VF.rescaleY(yScale_VF).domain() : Number(d3.select("#slider_"+key+"_VF").property("value")) );
     content += "\n"+key+": "+(key == xDim || key == yDim ? ("["+(+value[0].toFixed(3))+", "+(+value[1].toFixed(3))+"]") : (+value.toFixed(3)));
   }
-  div.value = content;
+  div.innerHTML = content;
 }
 function elongate_VF() {
   d3.select("#trajectory_VF").remove();
@@ -1393,7 +1509,7 @@ function fill_info_panel(d) {
     else
       content += "\n"+key+": ["+d3.min(multiarr[v].map(Number))+", "+d3.max(multiarr[v].map(Number))+"]";
   }
-  div.value = content;
+  div.innerHTML = content;
 }
 function handleMouseOver(d, i) {
   d3.select(this).attr("stroke-width", hoverStrokeWidth);
@@ -1417,7 +1533,7 @@ function fill_info_panel_outside() {
     else
       content += "\n"+key+": ["+d3.min(multiarr[v].map(Number))+", "+d3.max(multiarr[v].map(Number))+"]";
   }
-  div.value = content;
+  div.innerHTML = content;
 }
 function handleMouseOut(d, i) {
   d3.select(this).attr("stroke-width", normalStrokeWidth);
