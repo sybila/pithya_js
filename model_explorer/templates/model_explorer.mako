@@ -354,84 +354,14 @@
         </div>
     </div>
     
-    <!--div class="widget_panel">
-      <!-- dynamicly adds sliders with labels for parameters and variables (if more than 2 vars are present) in mako style>
-      % if len(vars) > 2 or len(params) > 0:
-        <div id="slidecontainer_VF">
-        % if len(vars) > 2:
-        <hr>
-        % for val in vars:
-          <% 
-          min_val  = min(map(float,thrs[val]))
-          max_val  = max(map(float,thrs[val]))
-          step_val = abs(max_val-min_val)*0.01
-          %>
-          % if val == vars[0] or val == vars[1]:
-          <div id="slider_${val}_wrapper_VF" hidden>
-          % else:
-          <div id="slider_${val}_wrapper_VF">
-          % endif
-            var. ${val}: <span id="text_${val}_VF"></span><br>
-            <input type="range" min=${min_val} max=${max_val} value=${min_val} step=${step_val} class="slider" id="slider_${val}_VF">
-          </div>
-        % endfor
-        % endif
-        % if len(params) > 0:
-        <hr>
-        % for val in params:
-          <% 
-          min_val  = float(val[1])
-          max_val  = float(val[2])
-          step_val = abs(max_val-min_val)*0.001
-          %>
-          par. ${val[0]}: <span id="text_${val[0]}"></span><br>
-          <input type="range" min=${min_val} max=${max_val} value=${min_val} step=${step_val} class="slider" id="slider_${val[0]}"><br>
-        % endfor
-        % endif
-        </div>
-      % endif
-      
-      <!-- dynamicly adds sliders with labels for parameters and variables (if more than 2 vars are present) in mako style>
-      % if len(vars) > 2 or len(params) > 0:
-        <div id="slidecontainer">
-        % if len(vars) > 2:
-        <hr>
-        % for val in vars:
-          <% 
-          min_val  = min(map(float,thrs[val]))
-          max_val  = max(map(float,thrs[val]))
-          step_val = abs(max_val-min_val)*0.01
-          %>
-          % if val == vars[0] or val == vars[1]:
-          <div id="slider_${val}_wrapper" hidden>
-          % else:
-          <div id="slider_${val}_wrapper">
-          % endif
-            var. ${val}: <span id="text_${val}"></span><br>
-            <input type="range" min=${min_val} max=${max_val} value=${min_val} step=${step_val} class="slider" id="slider_${val}">
-          </div>
-        % endfor
-        % endif
-        </div>
-      % endif
-      <div id="inputs_div">
-        <hr>
-        colouring orientation<br>
-        <select id="input_color_style">
-          <option value="both">both</option>
-          <option value="vertical">vertical</option>
-          <option value="horizontal">horizontal</option>
-          <option value="none">none</option>
-        </select><br>
-      </div>
-    </div-->
-    
     <script type="text/javascript" charset="utf-8">
     
 var width = d3.select("#plot_vf").property("offsetWidth"),
     height = d3.select("#plot_vf").property("offsetWidth"),
     xDim = document.getElementById("x_axis").value,
     yDim = document.getElementById("y_axis").value,
+    xDim_id = window.bio.vars.findIndex(x => x == xDim),
+    yDim_id = window.bio.vars.findIndex(x => x == yDim),
     thrs = window.bio.thrs,
     params = {},
     dt_VF = Number(d3.select("#input_dt_VF").property("value")),
@@ -445,7 +375,7 @@ var width = d3.select("#plot_vf").property("offsetWidth"),
 // initial values according to the sliders setting
 window.bio.params.map(x => params[x[0]] = x[1]);
     
-// iteratively adds event listener for varaible sliders (according to index)
+// iteratively adds event listener for variable sliders (according to index)
 % if len(vars) > 2:
   % for val in vars:
       (function(i) {
@@ -501,9 +431,11 @@ d3.select("#x_axis").on("change", function() {
     yDim = xDim;
   } else {
     d3.select("#slider_"+xDim+"_wrapper_VF").attr("hidden",null);
+    d3.select("#slider_"+xDim+"_wrapper").attr("hidden",null);
   }
   xDim = this.value;
   d3.select("#slider_"+this.value+"_wrapper_VF").attr("hidden","hidden");
+  d3.select("#slider_"+this.value+"_wrapper").attr("hidden","hidden");
   resettedZoom_VF();
   
   resettedZoom();
@@ -520,9 +452,11 @@ d3.select("#y_axis").on("change", function() {
     xDim = yDim;
   } else {
     d3.select("#slider_"+yDim+"_wrapper_VF").attr("hidden",null);
+    d3.select("#slider_"+yDim+"_wrapper").attr("hidden",null);
   }
   yDim = this.value;
   d3.select("#slider_"+this.value+"_wrapper_VF").attr("hidden","hidden");
+  d3.select("#slider_"+this.value+"_wrapper").attr("hidden","hidden");
   resettedZoom_VF();
   
   resettedZoom();
@@ -561,7 +495,7 @@ d3.select('#resetZoomBtn_VF')
     .on("click", resettedZoom_VF);
 
 
-// iteratively adds event listener for varaible sliders (according to index)
+// iteratively adds event listener for variable sliders (according to index)
 % if len(vars) > 2:
   % for val in vars:
       (function(i) {
@@ -596,6 +530,7 @@ d3.select('#resetZoomBtn')
 
 var margin = { top: 10, right: 10, bottom: 50, left: 50 },
     arrowlen = 3,
+    bgColor = d3.select("body").style("background-color"),
     noColor = "transparent",
     reachColor_TS = "rgba(65, 105, 225, 0.6)", // "royalblue with opacity"
     reachColor_VF = "royalblue",
@@ -620,7 +555,28 @@ var margin = { top: 10, right: 10, bottom: 50, left: 50 },
     transdata = [],
     trans = {},
     trans_dir = {},
-    zoomObject = d3.zoomIdentity;
+    zoomObject = d3.zoomIdentity
+    
+var infoPanel_lines = [
+  "Reach from: none",
+  "State id:   none",
+  % for id,v in enumerate(vars):
+    '${vars[id]}: '+(${id} == xDim_id || ${id} == yDim_id ? 
+                        '['+(${min([float(i) for i in thrs[v]])}).toFixed(3)+', '+(${max([float(i) for i in thrs[v]])}).toFixed(3)+']' : 
+                        '['+(d3.max(${[float(i) for i in thrs[v]]}.filter(k => k <= Number(d3.select("#slider_${vars[id]}").property("value"))))).toFixed(3)+', '
+                           +(d3.min(${[float(i) for i in thrs[v]]}.filter(k => k > Number(d3.select("#slider_${vars[id]}").property("value"))))).toFixed(3)+']'),
+  % endfor
+],
+    infoPanel_VF_lines = [
+  "Route start: none",
+  "Route end:   none",
+  % for id,v in enumerate(vars):
+    ' ${vars[id]}:   '+(${id} == xDim_id || ${id} == yDim_id ? 
+                        '['+(${min([float(i) for i in thrs[v]])}).toFixed(3)+', '+(${max([float(i) for i in thrs[v]])}).toFixed(3)+']' : 
+                        Number(d3.select("#slider_${vars[id]}_VF").property("value")).toFixed(3)),
+    'd[${vars[id]}]: unknown',
+  % endfor
+]
 
 function initiate_VF() {
   // d3 objects definitions
@@ -657,6 +613,32 @@ function initiate_VF() {
       .attr("pointer-events", "all")
       //.attr("transform", "translate("+(margin.left)+","+(margin.top)+")")
       .call(zoom_VF);
+      
+  // important box to cover svg content outside the axis-bounded window while zooming or moving 
+  svg_VF.append("rect")
+      .attr("x", 0)
+      .attr("y", height-margin.bottom)
+      .attr("width", width)
+      .attr("height", margin.bottom)
+      .attr("fill", bgColor)
+  svg_VF.append("rect")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", margin.left)
+      .attr("height", height)
+      .attr("fill", bgColor)
+  svg_VF.append("rect")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", width)
+      .attr("height", margin.top)
+      .attr("fill", bgColor)
+  svg_VF.append("rect")
+      .attr("x", width-margin.right)
+      .attr("y", 0)
+      .attr("width", margin.right)
+      .attr("height", height)
+      .attr("fill", bgColor)
           
   defs_VF = svg_VF.append("svg:defs");
   defs_VF.append("svg:marker")
@@ -753,6 +735,8 @@ function initiate_VF() {
       .attr("id", "yBrush_VF")
       .attr("class", "brush")
       .call(brushY_VF);
+      
+  d3.select("#infoPanel_VF").property("innerHTML", infoPanel_VF_lines.join("\n"))
 }
     
     
@@ -792,20 +776,44 @@ function initiate_TSS() {
       .on("end", brushedY);
   
   zoom = d3.zoom()
-            .scaleExtent([1, 100000])
-            .translateExtent([[0,0],[width,height]])
-            .on("zoom", zoomed);
+      .scaleExtent([1, 100000])
+      .translateExtent([[0,0],[width,height]])
+      .on("zoom", zoomed);
+      
   svg = d3.select("#plot_tss").append("svg")
       .attr("width", width)
       .attr("height", height);
   
   container = svg.append("g")
-          .attr("id","cont")
-          .attr("pointer-events", "all")
-      .attr("width", width-margin.left-margin.right)
-      .attr("height", height-margin.top-margin.bottom)
-          //.attr("transform", "translate("+(margin.left)+","+(margin.top)+")")
-          .call(zoom);
+      .attr("id","cont")
+      .attr("pointer-events", "all")
+      .call(zoom);
+      
+  // important box to cover svg content outside the axis-bounded window while zooming or moving 
+  svg.append("rect")
+      .attr("x", 0)
+      .attr("y", height-margin.bottom)
+      .attr("width", width)
+      .attr("height", margin.bottom)
+      .attr("fill", bgColor)
+  svg.append("rect")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", margin.left)
+      .attr("height", height)
+      .attr("fill", bgColor)
+  svg.append("rect")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", width)
+      .attr("height", margin.top)
+      .attr("fill", bgColor)
+  svg.append("rect")
+      .attr("x", width-margin.right)
+      .attr("y", 0)
+      .attr("width", margin.right)
+      .attr("height", height)
+      .attr("fill", bgColor)
   
   xLabel = svg.append("text")
       .attr("id", "xlabel")
@@ -826,7 +834,8 @@ function initiate_TSS() {
   bottomPanel = svg.append("g")
       .attr("id", "bPanel")
       .attr("class", "panel")
-      .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")");
+      .style("background-color","red")
+      .attr("transform", "translate("+0+","+(height-margin.bottom)+")");
       
   xAxis = d3.axisBottom(xScale);
   gX = bottomPanel.append("g")
@@ -852,6 +861,8 @@ function initiate_TSS() {
       .attr("id", "xBrush")
       .attr("class", "brush")
       .call(brushY);
+
+  d3.select("#infoPanel").property("innerHTML", infoPanel_lines.join("\n"))
 }
 
 initiate_TSS()
@@ -927,13 +938,17 @@ function resettedReach_VF() {
   reach_start_VF = null; 
   reach_end_VF = null; 
   trajectory_VF_length = 1000; 
-  d3.select("#trajectory_VF").remove();
+  d3.select("#trajectory_VF").remove()
+  
+  infoPanel_VF_lines[0] = "Route start: none"
+  infoPanel_VF_lines[1] = "Route end:   none"
+  d3.select("#infoPanel_VF").property("innerHTML", infoPanel_VF_lines.join("\n"))
 }
 function resettedZoom_VF() {
   update_axes_VF()
   container_VF.transition()
       .duration(500)
-      .call(zoom_VF.transform, d3.zoomIdentity);
+      .call(zoom_VF.transform, d3.zoomIdentity)
 }
 function zoomed_VF() {
   if(d3.event.transform) zoomObject_VF = d3.event.transform;
@@ -942,11 +957,24 @@ function zoomed_VF() {
   draw_VF();
   if(reach_start_VF !== null) reach_VF(null);
   
-  gX_VF.call(xAxis_VF.scale(zoomObject_VF.rescaleX(xScale_VF)));
-  gY_VF.call(yAxis_VF.scale(zoomObject_VF.rescaleY(yScale_VF)));
+  gX_VF.call(xAxis_VF.scale(zoomObject_VF.rescaleX(xScale_VF)))
+  gY_VF.call(yAxis_VF.scale(zoomObject_VF.rescaleY(yScale_VF)))
   // reset brushes
-  gBX_VF.call(brushX_VF.move, null);
-  gBY_VF.call(brushY_VF.move, null);
+  gBX_VF.call(brushX_VF.move, null)
+  gBY_VF.call(brushY_VF.move, null)
+  
+  for(var v = 0; v < window.bio.vars.length; v++) {
+    var key = window.bio.vars[v]
+    if(key == xDim)
+      infoPanel_VF_lines[2*v+2] = [" ",key,":   [",zoomObject_VF.rescaleX(xScale_VF).domain()[0].toFixed(3),
+                                   ", ",zoomObject_VF.rescaleX(xScale_VF).domain()[1].toFixed(3),"]"].join("")
+    else if(key == yDim)
+      infoPanel_VF_lines[2*v+2] = [" ",key,":   [",zoomObject_VF.rescaleY(yScale_VF).domain()[0].toFixed(3),
+                                   ", ",zoomObject_VF.rescaleY(yScale_VF).domain()[1].toFixed(3),"]"].join("")
+    else
+      infoPanel_VF_lines[2*v+2] = [" ",key,":   ",Number(d3.select("#slider_"+key+"_VF").property("value")).toFixed(3)].join("")
+  }
+  d3.select("#infoPanel_VF").property("innerHTML", infoPanel_VF_lines.join("\n"))
 }
 function brushedX_VF() {
   if (!d3.event.sourceEvent) return; // Only transition after input.
@@ -978,12 +1006,11 @@ function brushedY_VF() {
   zoomed_VF()
 }
 function handleMouseOver_VF(d, i) {
-  var div = document.getElementById("infoPanel_VF");
   var mouse = d3.mouse(this),
-      vars = {};
+      vars = {}
   // fill variables with values of mouse position and sliders
   for(var v = 0; v < window.bio.vars.length; v++) {
-    var key = window.bio.vars[v];
+    var key = window.bio.vars[v]
     if(key == xDim)       vars[key] = zoomObject_VF.rescaleX(xScale_VF).invert(mouse[0]);
     else if(key == yDim)  vars[key] = zoomObject_VF.rescaleY(yScale_VF).invert(mouse[1]);
     else                  vars[key] = Number(d3.select("#slider_"+key+"_VF").property("value"));
@@ -994,24 +1021,28 @@ function handleMouseOver_VF(d, i) {
     diffs[key] = Number(eq(vars, params));
   }
   
-  var content = "Route start: "+(reach_start_VF !== null ? ""+parsing_to_string(reach_start_VF)+"" : "none");
-  content +=  "\nRoute end:   "+(reach_end_VF !== null ? ""+parsing_to_string(reach_end_VF)+"" : "none");
+  //var content = "Route start: "+(reach_start_VF !== null ? ""+parsing_to_string(reach_start_VF)+"" : "none");
+  //content +=  "\nRoute end:   "+(reach_end_VF !== null ? ""+parsing_to_string(reach_end_VF)+"" : "none");
   for(var v = 0; v < window.bio.vars.length; v++) {
     var key = window.bio.vars[v];
-    content += "\n"+key+": "+(vars[key].toFixed(3))+"\td["+key+"]: "+(diffs[key].toFixed(3));
+    infoPanel_VF_lines[2*v+2] = [" ",key,":   ",vars[key].toFixed(3)].join("")
+    infoPanel_VF_lines[2*v+3] = ["d[",key,"]: ",diffs[key].toFixed(3)].join("")
   }
-  div.innerHTML = content;
+  d3.select("#infoPanel_VF").property("innerHTML", infoPanel_VF_lines.join("\n"))
 }
 function handleMouseOut_VF(d, i) {
-  var div = document.getElementById("infoPanel_VF");
-  var content = "Route start: "+(reach_start_VF !== null ? ""+parsing_to_string(reach_start_VF)+"" : "none");
-  content +=  "\nRoute end:   "+(reach_end_VF !== null ? ""+parsing_to_string(reach_end_VF)+"" : "none");
   for(var v = 0; v < window.bio.vars.length; v++) {
-    var key = window.bio.vars[v];
-    var value = key == xDim ? zoomObject_VF.rescaleX(xScale_VF).domain() : (key == yDim ? zoomObject_VF.rescaleY(yScale_VF).domain() : Number(d3.select("#slider_"+key+"_VF").property("value")) );
-    content += "\n"+key+": "+(key == xDim || key == yDim ? ("["+(+value[0].toFixed(3))+", "+(+value[1].toFixed(3))+"]") : (+value.toFixed(3)));
+    var key = window.bio.vars[v]
+    if(key == xDim)
+      infoPanel_VF_lines[2*v+2] = [" ",key,":   [",zoomObject_VF.rescaleX(xScale_VF).domain()[0].toFixed(3),
+                                   ", ",zoomObject_VF.rescaleX(xScale_VF).domain()[1].toFixed(3),"]"].join("")
+    else if(key == yDim)
+      infoPanel_VF_lines[2*v+2] = [" ",key,":   [",zoomObject_VF.rescaleY(yScale_VF).domain()[0].toFixed(3),
+                                   ", ",zoomObject_VF.rescaleY(yScale_VF).domain()[1].toFixed(3),"]"].join("")
+      
+    infoPanel_VF_lines[2*v+3] = ["d[",key,"]: unknown"].join("")
   }
-  div.innerHTML = content;
+  d3.select("#infoPanel_VF").property("innerHTML", infoPanel_VF_lines.join("\n"))
 }
 function elongate_VF() {
   d3.select("#trajectory_VF").remove();
@@ -1043,7 +1074,10 @@ function elongate_VF() {
       .attr("stroke-width", selfloopWidth_VF)
       .attr("marker-end", "url(#reachArrow)")
       .attr("d", trajectory_VF);
-  d3.select("#zoomField_VF").moveUp();
+  d3.select("#zoomField_VF").moveUp()
+  
+  infoPanel_VF_lines[1] = "Route end:   "+parsing_to_string(reach_end_VF)
+  d3.select("#infoPanel_VF").property("innerHTML", infoPanel_VF_lines.join("\n"))
 }
 // counts trajectory in VF from selected origin point
 function reach_VF(event) {
@@ -1090,7 +1124,11 @@ function reach_VF(event) {
       .attr("stroke-width", selfloopWidth_VF)
       .attr("marker-end", "url(#reachArrow)")
       .attr("d", trajectory_VF);
-  d3.select("#zoomField_VF").moveUp();
+  d3.select("#zoomField_VF").moveUp()
+  
+  infoPanel_VF_lines[0] = "Route start: "+parsing_to_string(reach_start_VF)
+  infoPanel_VF_lines[1] = "Route end:   "+parsing_to_string(reach_end_VF)
+  d3.select("#infoPanel_VF").property("innerHTML", infoPanel_VF_lines.join("\n"))
 }
 // function for in-field mouse-click event (counts trajectory in VF)
 function handleMouseClick_VF(d, i) {
@@ -1366,6 +1404,7 @@ function update_axes() {
 function resettedReach() {
   reach_start=null; 
   d3.selectAll(".states").attr("fill", noColor);
+  infoPanel_lines[0] = "Reach from: none"
   fill_info_panel_outside();
 }
 function resettedZoom() {
@@ -1394,11 +1433,24 @@ function zoomed() {
     .attr("width", d => x(d.x1)-x(d.x))
     .attr("height", d => y(d.y1)-y(d.y))
   
-  gX.call(xAxis.scale(x));
-  gY.call(yAxis.scale(y));
+  gX.call(xAxis.scale(x))
+  gY.call(yAxis.scale(y))
   // reset brushes
-  gBX.call(brushX.move, null);
-  gBY.call(brushY.move, null);
+  gBX.call(brushX.move, null)
+  gBY.call(brushY.move, null)
+  
+  for(var v = 0; v < window.bio.vars.length; v++) {
+    var key = window.bio.vars[v]
+    if(key == xDim)
+      infoPanel_lines[v+2] = [key,": [",zoomObject.rescaleX(xScale).domain()[0].toFixed(3),
+                                   ", ",zoomObject.rescaleX(xScale).domain()[1].toFixed(3),"]"].join("")
+    else if(key == yDim)
+      infoPanel_lines[v+2] = [key,": [",zoomObject.rescaleY(yScale).domain()[0].toFixed(3),
+                                   ", ",zoomObject.rescaleY(yScale).domain()[1].toFixed(3),"]"].join("")
+    else
+      infoPanel_lines[v+2] = [key,": [",d3.min(multiarr[v].map(Number)).toFixed(3),", ",d3.max(multiarr[v].map(Number)).toFixed(3),"]"].join("")
+  }
+  d3.select("#infoPanel").property("innerHTML", infoPanel_lines.join("\n"))
 }
 function brushedX() {
   if (!d3.event.sourceEvent) return; // Only transition after input.
@@ -1430,22 +1482,16 @@ function brushedY() {
   zoomed();
 }
 function fill_info_panel(d) {
-  var div = document.getElementById("infoPanel");
-  var content =  "reach from: "+(reach_start == null ? "none" : reach_start);
-      content += "\nstate: "+d.id.slice(1)+"";
+  infoPanel_lines[1] = "State id:   "+d.id.slice(1)
   for(var v = 0; v < window.bio.vars.length; v++) {
-    var key = window.bio.vars[v];
+    var key = window.bio.vars[v]
+    // (+some_number) is a trick how to get rid of trailling zeroes
     if(xDim == key)
-      // (+some_number) is a trick how to get rid of trailling zeroes
-      content += "\n"+xDim+": ["+(+parseFloat(d.x).toFixed(3))+", "\
-                                +(+parseFloat(d.x1).toFixed(3))+"]";
+      infoPanel_lines[v+2] = key+": ["+(parseFloat(d.x).toFixed(3))+", "+(parseFloat(d.x1).toFixed(3))+"]"
     else if(yDim == key)
-      content += "\n"+yDim+": ["+(+parseFloat(d.y1).toFixed(3))+", "\
-                                +(+parseFloat(d.y).toFixed(3))+"]";
-    else
-      content += "\n"+key+": ["+d3.min(multiarr[v].map(Number))+", "+d3.max(multiarr[v].map(Number))+"]";
+      infoPanel_lines[v+2] = key+": ["+(parseFloat(d.y1).toFixed(3))+", "+(parseFloat(d.y).toFixed(3))+"]"
   }
-  div.innerHTML = content;
+  d3.select("#infoPanel").property("innerHTML", infoPanel_lines.join("\n"))
 }
 function handleMouseOver(d, i) {
   d3.select(this).attr("stroke-width", hoverStrokeWidth);
@@ -1454,22 +1500,18 @@ function handleMouseOver(d, i) {
   fill_info_panel(d);
 }
 function fill_info_panel_outside() {
-  var div = document.getElementById("infoPanel");
-  var content =  "reach from: "+(reach_start == null ? "none" : reach_start);
-      content += "\nstate: none";
+  infoPanel_lines[1] = "State id:   none"
   for(var v = 0; v < window.bio.vars.length; v++) {
-    var key = window.bio.vars[v];
-    if(xDim == key)
-      // (+some_number) is a trick how to get rid of trailling zeroes
-      content += "\n"+xDim+": ["+(+xScale.domain()[0].toFixed(3))+", "\
-                                +(+xScale.domain()[1].toFixed(3))+"]";
-    else if(yDim == key)
-      content += "\n"+yDim+": ["+(+yScale.domain()[0].toFixed(3))+", "\
-                                +(+yScale.domain()[1].toFixed(3))+"]";
-    else
-      content += "\n"+key+": ["+d3.min(multiarr[v].map(Number))+", "+d3.max(multiarr[v].map(Number))+"]";
+    var key = window.bio.vars[v]
+    // (+some_number) is a trick how to get rid of trailling zeroes
+    if(key == xDim)
+      infoPanel_lines[v+2] = [key,": [",zoomObject.rescaleX(xScale).domain()[0].toFixed(3),
+                                   ", ",zoomObject.rescaleX(xScale).domain()[1].toFixed(3),"]"].join("")
+    else if(key == yDim)
+      infoPanel_lines[v+2] = [key,": [",zoomObject.rescaleY(yScale).domain()[0].toFixed(3),
+                                   ", ",zoomObject.rescaleY(yScale).domain()[1].toFixed(3),"]"].join("")
   }
-  div.innerHTML = content;
+  d3.select("#infoPanel").property("innerHTML", infoPanel_lines.join("\n"))
 }
 function handleMouseOut(d, i) {
   d3.select(this).attr("stroke-width", normalStrokeWidth);
@@ -1497,7 +1539,10 @@ function handleMouseClick(d, i) {
   d3.selectAll(".states")
     .filter(x => {return reachable.includes(Number(x.id.slice(1))) })
     .attr("fill", reachColor_TS);
-  if(d !== null) fill_info_panel(d);
+  if(d !== null) {
+    infoPanel_lines[0] = "Reach from: "+d.id.slice(1)
+    fill_info_panel(d)
+  }
 }
 
 function draw() {
