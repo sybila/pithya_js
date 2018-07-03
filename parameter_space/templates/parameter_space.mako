@@ -145,7 +145,7 @@
                 **{str(k) : results[u'parameter_bounds'][i] for i, k in enumerate(results[u'parameters'])})
   
   type = str(results[u'type'])
-  states = {i: k[u'bounds'] for i,k in enumerate(results[u'states']) }
+  states = {k[u'id']: k[u'bounds'] for k in results[u'states'] }
   params_val = [ k.encode('utf-8') for k in results[u'parameter_values'] ] if results['type'] == 'smt' else results['parameter_values']
   results = {str(k[u'formula']): k[u'data'] for k in results[u'results'] }
   
@@ -709,7 +709,7 @@ d3.select(window).on("resize", function() {
     height = newWidth
     d3.selectAll("svg").remove()
     
-    //TODO: add right methods to invoke recalculation of plots
+    //TODO: add right methods to invoke recalculation of plots (maybe just check)
     initiate()
     result_data_relevance()
     compute_projection()
@@ -1214,7 +1214,7 @@ function compute_projection() {
         }
       }
     } else {
-    
+      // TODO: check funcionality of following code (probably not working for dep params)
       if(d3.select("#param_id").property("value") == "all") {
         for(var p=0, len=param_ids.length; p<len; ++p) {
           const sid = state_ids[p]
