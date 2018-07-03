@@ -234,7 +234,8 @@
 					    %>
 						<div class="form-group param_slider">
 							<label class="control-label" for="slider_${val[0]}">Parameter ${val[0]}</label>
-							<input class="js-range-slider" id="slider_${val[0]}" min=${min_val} max=${max_val} value=${min_val} step=${step_val} 
+							<input class="js-range-slider" id="slider_${val[0]}" data-min=${min_val} data-max=${max_val} data-from=${min_val} data-step=${step_val} 
+							  min=${min_val} max=${max_val} value=${min_val} step=${step_val} 
 							  data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
 						</div>
 					% endfor
@@ -295,12 +296,13 @@
                     step_val = abs(max_val-min_val)*0.01
                     %>
                     % if val == vars[0] or val == vars[1]:
-                      <div class="form-group param_slider" id="slider_${val}_wrapper_VF" hidden>
+                      <div class="form-group" id="slider_${val}_wrapper_VF" hidden>
                     % else:
-                      <div class="form-group param_slider" id="slider_${val}_wrapper_VF">
+                      <div class="form-group" id="slider_${val}_wrapper_VF">
                     % endif
           							<label class="control-label" for="slider_${val}_VF" id="text_${val}_VF">Value of ${val}</label>
-          							<input class="js-range-slider" id="slider_${val}_VF" min=${min_val} max=${max_val} value=${min_val} step=${step_val} 
+          							<input class="js-range-slider" id="slider_${val}_VF" data-min=${min_val} data-max=${max_val} data-from=${min_val} data-step=${step_val} 
+							            min=${min_val} max=${max_val} value=${min_val} step=${step_val} 
           							  data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
           						</div>
                   % endfor
@@ -340,12 +342,13 @@
                     step_val = abs(max_val-min_val)*0.01
                     %>
                     % if val == vars[0] or val == vars[1]:
-                      <div class="form-group param_slider" id="slider_${val}_wrapper" hidden>
+                      <div class="form-group" id="slider_${val}_wrapper" hidden>
                     % else:
-                      <div class="form-group param_slider" id="slider_${val}_wrapper">
+                      <div class="form-group" id="slider_${val}_wrapper">
                     % endif
           							<label class="control-label" for="slider_${val}" id="text_${val}">Value of ${val}</label>
-          							<input class="js-range-slider" id="slider_${val}" min=${min_val} max=${max_val} value=${min_val} step=${step_val} 
+          							<input class="js-range-slider" id="slider_${val}" data-min=${min_val} data-max=${max_val} data-from=${min_val} data-step=${step_val} 
+							            min=${min_val} max=${max_val} value=${min_val} step=${step_val} 
           							  data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
           						</div>
                   % endfor
@@ -353,7 +356,8 @@
             </div>
         </div>
     </div>
-    
+    <script type="text/javascript" src="static/js/vendor/jquery-1.12.3.min.js"></script>
+    <script type="text/javascript" src="static/js/ion-rangeSlider/ion.rangeSlider.min.js"></script>
     <script type="text/javascript" charset="utf-8">
     
 var width = d3.select("#plot_vf").property("offsetWidth"),
@@ -374,7 +378,7 @@ var width = d3.select("#plot_vf").property("offsetWidth"),
 
 // initial values according to the sliders setting
 window.bio.params.map(x => params[x[0]] = x[1]);
-    
+
 // iteratively adds event listener for variable sliders (according to index)
 % if len(vars) > 2:
   % for val in vars:
@@ -389,19 +393,34 @@ window.bio.params.map(x => params[x[0]] = x[1]);
 // iteratively adds event listener for parameter sliders (according to index)
 % if len(params) > 0:
   % for val in params:
-      (function(i) {
-          d3.select("#slider_"+i[0]).on("input", function() {
-              // fill parameters with current values
-              params[i[0]] = Number(d3.select("#slider_"+i[0]).property("value")); // according to slider for parameters
-              zoomed_VF();
-              
-              compute_tss();
-              transform_tss();
-              draw();
-              zoomed();
-              if(reach_start !== null) handleMouseClick(null,reach_start);
-          })
-      })(${val});
+    (function(i) {
+/*        $('#slider_'+i[0]).ionRangeSlider({
+          onFinish: function (data) {
+            params[i[0]] = Number(data.from); // according to slider for parameters
+            zoomed_VF();
+            //initiate_VF();
+            //generateGrid_VF();
+            //draw_VF();
+            
+            compute_tss();
+            transform_tss();
+            draw();
+            zoomed();
+            if(reach_start !== null) handleMouseClick(null,reach_start);
+          }
+        }); */
+        d3.select("#slider_"+i[0]).on("input", function() {
+            // fill parameters with current values
+            params[i[0]] = Number(d3.select(this).property("value")); // according to slider for parameters
+            zoomed_VF();
+            
+            compute_tss();
+            transform_tss();
+            draw();
+            zoomed();
+            if(reach_start !== null) handleMouseClick(null,reach_start);
+        });
+    })(${val});
   % endfor
 % endif
 
@@ -444,7 +463,7 @@ d3.select("#x_axis").on("change", function() {
   if(reach_start !== null) handleMouseClick(null,reach_start);
 });
 
-// event listener for change of selectected dimension for Y axis
+// event listener for change of selected dimension for Y axis
 d3.select("#y_axis").on("change", function() {
   var other = d3.select("#x_axis").property("value");
   if(this.value == other) {
@@ -465,7 +484,7 @@ d3.select("#y_axis").on("change", function() {
   if(reach_start !== null) handleMouseClick(null,reach_start);
 });
 
-// event listener fr width change of plots (they should be of same size)
+// event listener for width change of plots (they should be of same size)
 d3.select(window).on("resize", function() {
   var newWidth = d3.select("#plot_vf").property("offsetWidth")
   if(newWidth != width) {

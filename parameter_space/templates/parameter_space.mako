@@ -185,8 +185,8 @@
                        'states': ${states}, 
                        'params': ${params_val}, 
                        'map': ${results} };
-      console.log(window.bio);
-      console.log(window.result);
+      //console.log(window.bio);
+      //console.log(window.result);
       
       Set.prototype.difference = function(setB) {
           var difference = new Set(this);
@@ -252,16 +252,20 @@
       };
     </script>
   
-    <!--meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1"-->
+    <link rel="stylesheet" type="text/css" href="static/css/bootstrap-reboot.css">
+    <link rel="stylesheet" type="text/css" href="static/css/ion.rangeSlider.css">
+    <link rel="stylesheet" type="text/css" href="static/css/ion.rangeSlider.skinShiny.css">
+    <link rel="stylesheet" type="text/css" href="static/css/simplex2.css">
+    <link rel="stylesheet" type="text/css" href="static/css/style.css">
     <style>
       body {
         background-color: white;
-        margin: 0;
+        margin: 10px;
         font-family: sans-serif;
-        font-size: 18px;
+        //font-size: 18px;
       }
       .containers {
-        pointer-events: all;
+        //pointer-events: all;
       }
       #zoomObject_PS {
       }
@@ -281,245 +285,239 @@
         font-size: 15px;
       }
       .widget_panel {
-        position: absolute;
-        left: 560px;
-        height: 100%;
-        width: 230px;
-        
+      }
+      .label {
+        font-size: 15px;
       }
       #resetZoomBtn_PS {
-        position: absolute;
-        top: 10px;
       }
       #addMoreSamplePointsBtn_PS {
-        position: absolute;
-        top: 10px;
-        left: 75px;
       }
       #slider_PS_radius_wrapper {
-        position: absolute;
-        top: 0px;
-        left: 160px;
       }
       #resetReachBtn_PS {
-        position: absolute;
-        top: 40px;
       }
       #resetReachOneBtn_PS {
-        position: absolute;
-        top: 40px;
-        left: 75px;
       }
       #checkbox_PS_mode {
-        position: absolute;
-        top: 40px;
-        left: 170px;
       }
       #text_PS_mode {
-        position: absolute;
-        top: 40px;
-        left: 190px;
       }
       #infoPanel_PS {
-        position: absolute;
-        top: 70px;
         flex-grow: 1;
       }
       #x_axis_PS_div {
-        position: absolute;
-        top: 160px;
-        width: 90px;
       }
       #y_axis_PS_div {
-        position: absolute;
-        top: 160px;
-        width: 90px;
-        left: 100px;
       }
       #slidecontainer_PS {
-        position: absolute;
-        top: 200px;
       }
       #formula_div {
-        position: absolute;
-        top: 550px;
       }
       
       #resetZoomBtn_SS {
-        position: absolute;
-        top: 650px;
       }
       #resetReachBtn_SS {
-        position: absolute;
-        top: 680px;
       }
       #infoPanel_SS {
-        position: absolute;
-        top: 710px;
         flex-grow: 1;
       }
       #x_axis_SS_div {
-        position: absolute;
-        top: 800px;
-        width: 90px;
       }
       #y_axis_SS_div {
-        position: absolute;
-        top: 800px;
-        width: 90px;
-        left: 100px;
       }
       #slidecontainer_SS {
-        position: absolute;
-        top: 840px;
       }
     </style>
 
   </head>
   
   <body>
-    <div class="widget_panel">
-      <button id="resetZoomBtn_PS">Unzoom</button>
-      <button id="addMoreSamplePointsBtn_PS">Add points</button>
-      <div id="slider_PS_radius_wrapper">
-        radius: <span id="text_PS_radius"></span><br>
-        <input type="range" min=1 max=10 value=4 step=1 class="slider" id="slider_PS_radius">
-      </div>
-<!--      ${save_button()} -->
-      <button id="resetReachBtn_PS">Deselect</button>
-      <button id="resetReachOneBtn_PS">Deselect last</button>
-      <input type="checkbox" value="mode" class="cb" id="checkbox_PS_mode" checked><span id="text_PS_mode">include</span>
-      <textarea id="infoPanel_PS" rows="${len(params)+2}" cols="35" wrap="off" disabled></textarea>
-      <!-- dynamicly adds sliders with labels for parameters and variables (if more than 2 vars are present) in mako style -->
-      <div id="x_axis_PS_div">
-        X axis<br>
-        <select name="xAxis" id="x_axis_PS" style="width:90px" required>
-          % for val in [k[0] for k in params]+vars:
-            % if val == params[0][0]:
-              <option value="${val}" selected>${val}</option>
-            % else:
-              <option value="${val}">${val}</option>
-            % endif
-          % endfor
-        </select>
-      </div>
-      <div id="y_axis_PS_div">
-        Y axis<br>
-        <select name="yAxis" id="y_axis_PS" style="width:90px" required>
-          % for val in [k[0] for k in params]+vars:
-            % if len(params) > 1 and val == params[1][0]:
-              <option value="${val}" selected>${val}</option>
-            % else:
-              <option value="${val}">${val}</option>
-            % endif
-          % endfor
-        </select>
-      </div>
-      <div id="slidecontainer_PS">
-      <hr>
-      % for val in params:
-        <% 
-        min_val  = float(val[1])
-        max_val  = float(val[2])
-        step_val = abs(max_val-min_val)*0.001
-        %>
-        % if val[0] == params[0][0] or val[0] == params[1][0]:
-        <!--div id="slider_PS_${val[0]}_wrapper" hidden-->
-        <div id="slider_PS_${val[0]}_wrapper">
-        % else:
-        <div id="slider_PS_${val[0]}_wrapper">
-        % endif
-          par. ${val[0]}: <span id="text_PS_${val[0]}"></span><br>
-          <input type="range" min=${min_val} max=${max_val} value=${min_val} step=${step_val} class="slider" id="slider_PS_${val[0]}">
-          <input type="checkbox" value="all" class="cb" id="checkbox_PS_${val[0]}" checked>whole
+    <div class="my-row">
+        <div class="row row-header">
+            <div class="col-sm-2 lab">Show results for</div>
+            <div class="col-sm-2">
+                <select id="formula" class="form-control" required>
+                  % for key, val in enumerate(results.keys()):
+                    % if key == 0:
+                      <option value="${val}" selected>${val}</option>
+                    % else:
+                      <option value="${val}">${val}</option>
+                    % endif
+                  % endfor
+                </select>
+            </div>
+            <div class="col-sm-2 lab">Select parameterisation</div>
+            <div class="col-sm-2">
+                <select id="param_id" class="form-control" required>
+                    <option value="all" selected>all</option>
+                  % for key, val in enumerate(params_val):
+                    <option value="${key}">${key}</option>
+                  % endfor
+                </select>
+            </div>
         </div>
-      % endfor
-      <hr>
-      % for val in vars:
-        <% 
-        min_val  = min(map(float,thrs[val]))
-        max_val  = max(map(float,thrs[val]))
-        step_val = abs(max_val-min_val)*0.01
-        %>
-        <div id="slider_PS_${val}_wrapper">
-          var. ${val}: <span id="text_PS_${val}"></span><br>
-          <input type="range" min=${min_val} max=${max_val} value=${min_val} step=${step_val} class="slider" id="slider_PS_${val}">
-          <input type="checkbox" value="all" class="cb" id="checkbox_PS_${val}" checked>whole
-        </div>
-      % endfor
-      </div>
-      <div id="formula_div">
-        Property<br>
-        <select id="formula" style="width:190px" required>
-          % for key, val in enumerate(results.keys()):
-            % if key == 0:
-              <option value="${val}" selected>${val}</option>
-            % else:
-              <option value="${val}">${val}</option>
-            % endif
-          % endfor
-        </select>
-        Param<br>
-        <select id="param_id" style="width:190px" required>
-            <option value="all" selected>all</option>
-          % for key, val in enumerate(params_val):
-            <option value="${key}">${key}</option>
-          % endfor
-        </select>
         <hr>
-      </div>
-      <button id="resetZoomBtn_SS">Unzoom</button>
-      <button id="resetReachBtn_SS">Deselect</button>
-      <textarea id="infoPanel_SS" rows="${len(vars)+1}" cols="35" wrap="off" disabled></textarea>
-      <div id="x_axis_SS_div">
-        X axis<br>
-        <select name="xAxis" id="x_axis_SS" style="width:90px" required>
-          % for val in vars:
-            % if val == vars[0]:
-              <option value="${val}" selected>${val}</option>
-            % else:
-              <option value="${val}">${val}</option>
-            % endif
-          % endfor
-        </select>
-      </div>
-      <div id="y_axis_SS_div">
-        Y axis<br>
-        <select name="yAxis" id="y_axis_SS" style="width:90px" required>
-          % for val in vars:
-            % if len(vars) > 1 and val == vars[1]:
-              <option value="${val}" selected>${val}</option>
-            % else:
-              <option value="${val}">${val}</option>
-            % endif
-          % endfor
-        </select>
-      </div>
-      <div id="slidecontainer_SS">
-      <hr>
-      % if len(vars) > 2 :
-        % for val in vars:
-          <% 
-          min_val  = min(map(float,thrs[val]))
-          max_val  = max(map(float,thrs[val]))
-          step_val = abs(max_val-min_val)*0.01
-          %>
-          % if val == vars[0] or val == vars[1]:
-          <div id="slider_SS_${val}_wrapper" hidden>
-          % else:
-          <div id="slider_SS_${val}_wrapper">
-          % endif
-            var. ${val}: <span id="text_SS_${val}"></span><br>
-            <input type="range" min=${min_val} max=${max_val} value=${min_val} step=${step_val} class="slider" id="slider_SS_${val}">
-          </div>
-        % endfor
-      % endif
-      </div>
+        <div class="row nohide">
+            <div class="col-sm-2">
+                <div style="text-align: right;">
+                    <div><button class="btn btn-default" id="resetZoomBtn_PS">Unzoom</button></div>
+                    <div>
+                        <div class="form-group row nohide" id="slider_PS_radius_wrapper" hidden>
+                          <div class="col-sm-6">
+                            <label class="control-label" for="slider_PS_radius" id="text_PS_radius">Radius</label>
+                            <input class="js-range-slider" id="slider_PS_radius" data-min=1 data-max=10 data-from=4 data-step=1 min=1 max=10 value=4 step=1 
+              							  data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
+                          </div>
+                          <div class="col-sm-6">
+                            <button class="btn btn-default" id="addMoreSamplePointsBtn_PS">Add points</button>
+              						</div>
+                        </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-sm-4">  <button class="btn btn-default" id="resetReachBtn_PS">Deselect</button> </div>
+                      <div class="col-sm-6">  <button class="btn btn-default" id="resetReachOneBtn_PS">Deselect last</button> </div>
+                      <div class="col-sm-2">
+                        <label class="control-label" for="checkbox_PS_mode" id="text_PS_mode">Include</label>
+                        <input type="checkbox" value="mode" class="cb" id="checkbox_PS_mode" checked>
+                      </div>
+                    </div>
+                </div>
+                <pre id="infoPanel_PS"></pre>
+                <div class="row">
+                    <div class="col-sm-6" id="x_axis_PS_div">
+                        <label class="control-label" for="x_axis_PS" >Horizontal axis</label>
+                        <select name="xAxis" id="x_axis_PS" class="form-control" required>
+                          % for val in [k[0] for k in params]+vars:
+                            % if val == params[0][0]:
+                              <option value="${val}" selected>${val}</option>
+                            % else:
+                              <option value="${val}">${val}</option>
+                            % endif
+                          % endfor
+                        </select>
+                    </div>
+                    <div class="col-sm-6" id="y_axis_PS_div">
+                        <label class="control-label" for="y_axis_PS" >Vertical axis</label>
+                        <select name="yAxis" id="y_axis_PS" class="form-control" required>
+                          % for val in [k[0] for k in params]+vars:
+                            % if len(params) > 1 and val == params[1][0]:
+                              <option value="${val}" selected>${val}</option>
+                            % else:
+                              <option value="${val}">${val}</option>
+                            % endif
+                          % endfor
+                        </select>
+                    </div>
+                </div>
+                <div id="slidecontainer_PS">
+                % for val in params:
+                  <% 
+                  min_val  = float(val[1])
+                  max_val  = float(val[2])
+                  step_val = abs(max_val-min_val)*0.001
+                  %>
+                  % if val[0] == params[0][0] or val[0] == params[1][0]:
+                    <!--div class="form-group" id="slider_PS_${val[0]}_wrapper" hidden-->
+                    <div class="form-group row nohide" id="slider_PS_${val[0]}_wrapper">
+                  % else:
+                    <div class="form-group row nohide" id="slider_PS_${val[0]}_wrapper">
+                  % endif
+                      <div class="col-sm-10">
+                        <label class="control-label" for="slider_PS_${val[0]}" id="text_PS_${val[0]}">Value of ${val[0]}</label>
+                        <input class="js-range-slider" id="slider_PS_${val[0]}" data-min=${min_val} data-max=${max_val} data-from=${min_val} data-step=${step_val} 
+  						            min=${min_val} max=${max_val} value=${min_val} step=${step_val} 
+          							  data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
+                      </div>
+                      <div class="col-sm-2">
+                        <label class="control-label" for="checkbox_PS_${val[0]}">whole</label>
+                        <input type="checkbox" value="all" class="cb" id="checkbox_PS_${val[0]}" checked>
+                      </div>
+                    </div>
+                % endfor
+                % for val in vars:
+                  <% 
+                  min_val  = min(map(float,thrs[val]))
+                  max_val  = max(map(float,thrs[val]))
+                  step_val = abs(max_val-min_val)*0.01
+                  %>
+                  <div class="form-group row nohide" id="slider_PS_${val}_wrapper">
+                    <div class="col-sm-10">
+                      <label class="control-label" for="slider_PS_${val}" id="text_PS_${val}">Value of ${val}</label>
+                      <input class="js-range-slider" id="slider_PS_${val}" data-min=${min_val} data-max=${max_val} data-from=${min_val} data-step=${step_val} 
+						            min=${min_val} max=${max_val} value=${min_val} step=${step_val} 
+        							  data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
+                    </div>
+                    <div class="col-sm-2">
+                      <label class="control-label" for="checkbox_PS_${val}">whole</label>
+                      <input type="checkbox" value="all" class="cb" id="checkbox_PS_${val}" checked>
+                    </div>
+                  </div>
+                % endfor
+                </div>
+            </div>
+            <div class="col-sm-4 visual" id="plot_ps"></div>
+            <div class="col-sm-4 visual" id="plot_ss"></div>
+            <div class="col-sm-2">
+                <div>
+                    <div><button class="btn btn-default" id="resetZoomBtn_SS">Unzoom</button></div>
+                    <div><button class="btn btn-default" id="resetReachBtn_SS">Deselect</button></div>
+                </div>
+                <pre id="infoPanel_SS"></pre>
+                <div class="row">
+                    <div class="col-sm-6" id="x_axis_SS_div">
+                        <label class="control-label" for="x_axis_SS" >Horizontal axis</label>
+                        <select name="xAxis" id="x_axis_SS" class="form-control" required>
+                          % for val in vars:
+                            % if val == vars[0]:
+                              <option value="${val}" selected>${val}</option>
+                            % else:
+                              <option value="${val}">${val}</option>
+                            % endif
+                          % endfor
+                        </select>
+                    </div>
+                    <div class="col-sm-6" id="y_axis_SS_div">
+                        <label class="control-label" for="y_axis_SS" >Vertical axis</label>
+                        <select name="yAxis" id="y_axis_SS" class="form-control" required>
+                          % for val in vars:
+                            % if len(vars) > 1 and val == vars[1]:
+                              <option value="${val}" selected>${val}</option>
+                            % else:
+                              <option value="${val}">${val}</option>
+                            % endif
+                          % endfor
+                        </select>
+                    </div>
+                </div>
+                % if len(vars) > 2 :
+                  % for val in vars:
+                    <% 
+                    min_val  = min(map(float,thrs[val]))
+                    max_val  = max(map(float,thrs[val]))
+                    step_val = abs(max_val-min_val)*0.01
+                    %>
+                    % if val == vars[0] or val == vars[1]:
+                      <div class="form-group" id="slider_SS_${val}_wrapper" hidden>
+                    % else:
+                      <div class="form-group" id="slider_SS_${val}_wrapper">
+                    % endif
+          							<label class="control-label" for="slider_SS_${val}" id="text_SS_${val}">Value of ${val}</label>
+          							<input class="js-range-slider" id="slider_SS_${val}" data-min=${min_val} data-max=${max_val} data-from=${min_val} data-step=${step_val} 
+							            min=${min_val} max=${max_val} value=${min_val} step=${step_val} 
+          							  data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
+          						</div>
+                  % endfor
+                % endif
+            </div>
+        </div>
     </div>
     
     <script type="text/javascript" charset="utf-8">
    
-var xDimPS = document.getElementById("x_axis_PS").value,
+var width = d3.select("#plot_ps").property("offsetWidth"),
+    height = d3.select("#plot_ps").property("offsetWidth"),
+    xDimPS = document.getElementById("x_axis_PS").value,
     yDimPS = document.getElementById("y_axis_PS").value,
     xDimPS_id = (window.bio.vars.includes(xDimPS) ? window.bio.vars.findIndex(x => x == xDimPS) : window.bio.params.findIndex(x => x[0] == xDimPS)),
     yDimPS_id = (window.bio.vars.includes(yDimPS) ? window.bio.vars.findIndex(x => x == yDimPS) : window.bio.params.findIndex(x => x[0] == yDimPS)),
@@ -535,35 +533,35 @@ var xDimPS = document.getElementById("x_axis_PS").value,
     radius = Number(d3.select("#slider_PS_radius").property("value")),
     var_bounds = [];
 
-d3.select("#text_PS_radius").html(radius)
-
 // initial parametric bounds are not limited (projection through all parametric dimensions)
 window.bio.params.forEach(x => param_bounds.push(null));
 // initial bounds of variables are not limited (projection through all dimensions)
 window.bio.vars.forEach(x => var_bounds.push(null));
 
+if(window.result.type == "smt") {
+  d3.select("#slider_PS_radius_wrapper").attr("hidden",null)
+}
+
 // iteratively adds event listener for variable sliders in PS (according to index)
 % for key, val in enumerate(vars):
     (function(i,d) {
-        d3.select("#text_PS_"+d).html(d3.select("#slider_PS_"+d).property("value"));
-        
         d3.select("#slider_PS_"+d).on("input", function() {
-            d3.select("#text_PS_"+d).html(this.value);
             if(! d3.select("#checkbox_PS_"+d).property("checked")) {
-                var_bounds[i] = Number(d3.select("#slider_PS_"+d).property("value"));
+                var_bounds[i] = Number(d3.select(this).property("value"));
                 result_data_relevance()
                 compute_projection()
                 draw_PS()
                 compute_statedata()
                 draw_SS()
                 redrawClickedStates()
+                resetInfoPanel_PS()
             }
         });
         d3.select('#checkbox_PS_'+d).on("change", function() {
-            if(! d3.select("#checkbox_PS_"+d).property("checked")) {
-                var_bounds[i] = Number(d3.select("#slider_PS_"+d).property("value"));
+            if(! d3.select(this).property("checked")) {
+              var_bounds[i] = Number(d3.select("#slider_PS_"+d).property("value"));
             } else {
-                var_bounds[i] = null;
+              var_bounds[i] = null;
             }
             result_data_relevance()
             compute_projection()
@@ -571,6 +569,7 @@ window.bio.vars.forEach(x => var_bounds.push(null));
             compute_statedata()
             draw_SS()
             redrawClickedStates()
+            resetInfoPanel_PS()
         });
     })(${key},"${val}");
 % endfor
@@ -578,25 +577,23 @@ window.bio.vars.forEach(x => var_bounds.push(null));
 // iteratively adds event listener for parameter sliders in PS (according to index)
 % for key, val in enumerate(params):
     (function(i,d) {
-        d3.select("#text_PS_"+d[0]).html(d3.select("#slider_PS_"+d[0]).property("value"));
-        
         d3.select("#slider_PS_"+d[0]).on("input", function() {
-            d3.select("#text_PS_"+d[0]).html(this.value);
             if(! d3.select("#checkbox_PS_"+d[0]).property("checked")) {
-                param_bounds[i] = Number(d3.select("#slider_PS_"+d[0]).property("value"));
+                param_bounds[i] = Number(d3.select(this).property("value"));
                 result_data_relevance()
                 compute_projection()
                 draw_PS()
                 compute_statedata()
                 draw_SS()
                 redrawClickedStates()
+                resetInfoPanel_PS()
             }
         });
         d3.select('#checkbox_PS_'+d[0]).on("change", function() {
-            if(! d3.select("#checkbox_PS_"+d[0]).property("checked")) {
-                param_bounds[i] = Number(d3.select("#slider_PS_"+d[0]).property("value"));
+            if(! d3.select(this).property("checked")) {
+              param_bounds[i] = Number(d3.select("#slider_PS_"+d[0]).property("value"));
             } else {
-                param_bounds[i] = null;
+              param_bounds[i] = null;
             }
             result_data_relevance()
             compute_projection()
@@ -604,6 +601,7 @@ window.bio.vars.forEach(x => var_bounds.push(null));
             compute_statedata()
             draw_SS()
             redrawClickedStates()
+            resetInfoPanel_PS()
         });
     })(${key},${val});
 % endfor
@@ -612,11 +610,7 @@ window.bio.vars.forEach(x => var_bounds.push(null));
 % if len(vars) > 2:
   % for key, val in enumerate(vars):
       (function(i,d) {
-          d3.select("#text_SS_"+d).html(d3.select("#slider_SS_"+d).property("value"));
-          
           d3.select("#slider_SS_"+d).on("input", function() {
-              d3.select("#text_SS_"+d).html(this.value);
-              
               compute_statedata()
               draw_SS()
           })
@@ -624,7 +618,7 @@ window.bio.vars.forEach(x => var_bounds.push(null));
   % endfor
 % endif
   
-// event listener for change of selectected dimension for X axis in PS
+// event listener for change of selected dimension for X axis in PS
 d3.select("#x_axis_PS").on("change", function() {
   var other = d3.select("#y_axis_PS").property("value");
   if(this.value == other) {
@@ -646,7 +640,7 @@ d3.select("#x_axis_PS").on("change", function() {
   redrawClickedPoints()
 });
 
-// event listener for change of selectected dimension for Y axis in PS
+// event listener for change of selected dimension for Y axis in PS
 d3.select("#y_axis_PS").on("change", function() {
   var other = d3.select("#x_axis_PS").property("value");
   if(this.value == other) {
@@ -668,7 +662,7 @@ d3.select("#y_axis_PS").on("change", function() {
   redrawClickedPoints()
 });
 
-// event listener for change of selectected dimension for X axis in SS
+// event listener for change of selected dimension for X axis in SS
 d3.select("#x_axis_SS").on("change", function() {
   var other = d3.select("#y_axis_SS").property("value");
   if(this.value == other) {
@@ -687,7 +681,7 @@ d3.select("#x_axis_SS").on("change", function() {
   compute_statedata()
   draw_SS()
 });
-// event listener for change of selectected dimension for Y axis in SS
+// event listener for change of selected dimension for Y axis in SS
 d3.select("#y_axis_SS").on("change", function() {
   var other = d3.select("#x_axis_SS").property("value");
   if(this.value == other) {
@@ -706,6 +700,25 @@ d3.select("#y_axis_SS").on("change", function() {
   compute_statedata()
   draw_SS()
 });
+
+// event listener for width change of plots (they should be of same size)
+d3.select(window).on("resize", function() {
+  var newWidth = d3.select("#plot_ps").property("offsetWidth")
+  if(newWidth != width) {
+    width = newWidth
+    height = newWidth
+    d3.selectAll("svg").remove()
+    
+    //TODO: add right methods to invoke recalculation of plots
+    initiate()
+    result_data_relevance()
+    compute_projection()
+    draw_PS()
+    
+    compute_statedata()
+    draw_SS()
+  }
+})
 
 d3.select("#formula").on("change", function() {
   formula = d3.select("#formula").property("value");
@@ -738,7 +751,6 @@ d3.select('#addMoreSamplePointsBtn_PS')
 d3.select('#slider_PS_radius')
     .on("change", function() {
       radius = d3.select("#slider_PS_radius").property("value")
-      d3.select("#text_PS_radius").html(radius)
       zoomed_PS()
     })
 
@@ -756,9 +768,7 @@ d3.select('#resetZoomBtn_SS')
     
 //###################################################    
 
-var width = 550,
-    height = 450,
-    margin = { top: 10, right: 10, bottom: 50, left: 50 },
+var margin = { top: 15, right: 15, bottom: 50, left: 50 },
     edgelen = 7,
     bgColor = d3.select("body").style("background-color"),
     noColor = "transparent",
@@ -778,73 +788,100 @@ var width = 550,
     clicked_points_PS = [],
     zoomObject_PS = d3.zoomIdentity,
     zoomObject_SS = d3.zoomIdentity
-
-
-// Definitions of D3 scales used in visualisation
-var xScalePS = d3.scaleLinear()
-      .domain([d3.min(thrs[xDimPS],parseFloat),
-               d3.max(thrs[xDimPS],parseFloat)])
-      .range([margin.left, width - margin.right]),
-    xScaleSS = d3.scaleLinear()
-      .domain([d3.min(thrs[xDimSS],parseFloat),
-               d3.max(thrs[xDimSS],parseFloat)])
-      .range([margin.left, width - margin.right])
-
-var yScalePS = d3.scaleLinear()
-      .domain([d3.min(thrs[yDimPS],parseFloat),
-               d3.max(thrs[yDimPS],parseFloat)])
-      .range([height - margin.bottom, margin.top]),
-    yScaleSS = d3.scaleLinear()
-      .domain([d3.min(thrs[yDimSS],parseFloat),
-               d3.max(thrs[yDimSS],parseFloat)])
-      .range([height - margin.bottom, margin.top])
-
-// Definitions of D3 brush objects for plots in visualisation (each plot can be brushed in both axis separately)      
-var brushXPS = d3.brushX()
-    .extent([[margin.left, 0], [width-margin.right, margin.bottom]])
-    .on("end", brushedX_PS),
     
-    brushYPS = d3.brushY()
-    .extent([[-margin.left, margin.top], [0, height-margin.bottom]])
-    .on("end", brushedY_PS),
-    
-    brushXSS = d3.brushX()
-    .extent([[margin.left, 0], [width-margin.right, margin.bottom]])
-    .on("end", brushedX_SS),
-    
-    brushYSS = d3.brushY()
-    .extent([[-margin.left, margin.top], [0, height-margin.bottom]])
-    .on("end", brushedY_SS)
+var infoPanel_SS_lines = [
+  "State id: none",
+  % for id,v in enumerate(vars):
+    '${v}: '+('${v}' == xDimSS || '${v}' == yDimSS ? 
+                        '['+(${min([float(i) for i in thrs[v]])}).toFixed(3)+', '+(${max([float(i) for i in thrs[v]])}).toFixed(3)+']' : 
+                        '['+(d3.max(${[float(i) for i in thrs[v]]}.filter(k => k <= Number(d3.select("#slider_SS_${v}").property("value"))))).toFixed(3)+', '
+                           +(d3.min(${[float(i) for i in thrs[v]]}.filter(k => k > Number(d3.select("#slider_SS_${v}").property("value"))))).toFixed(3)+']'),
+  % endfor
+],
+    infoPanel_PS_lines = [
+  "States cov: unknown",
+  "Param. cov: unknown",
+  % for id,v in enumerate(params):
+    '${v[0]}: '+('${v[0]}' == xDimPS || '${v[0]}' == yDimPS || d3.select("#checkbox_PS_${v[0]}").property("checked") ? 
+                          '['+(${v[1]}).toFixed(3)+', '+(${v[2]}).toFixed(3)+']' : 
+                          Number(d3.select("#slider_PS_${v[0]}").property("value")).toFixed(3)),
+  % endfor
+  % for id,v in enumerate(vars):
+    '${v}: '+('${v}' == xDimPS || '${v}' == yDimPS || d3.select("#checkbox_PS_${v}").property("checked") ? 
+              '['+(${min([float(i) for i in thrs[v]])}).toFixed(3)+', '+(${max([float(i) for i in thrs[v]])}).toFixed(3)+']' : 
+              Number(d3.select("#slider_PS_${v}").property("value")).toFixed(3)),
+  % endfor
+]
 
-// Definitions of D3 zoom objects for plots in vis
-// TODO: boundaries are moving when zooming in
-var zoomPS = d3.zoom()
-          .scaleExtent([1, Infinity])
-          .translateExtent([[0,0],[width,height]])
-          .on("zoom", zoomed_PS),
-    zoomSS = d3.zoom()
-          .scaleExtent([1, Infinity])
-          .translateExtent([[0,0],[width,height]])
-          .on("zoom", zoomed_SS)
+
+function initiate() {
+  // Definitions of D3 scales used in visualisation
+  xScalePS = d3.scaleLinear()
+        .domain([d3.min(thrs[xDimPS],parseFloat),
+                 d3.max(thrs[xDimPS],parseFloat)])
+        .range([margin.left, width - margin.right])
+  xScaleSS = d3.scaleLinear()
+        .domain([d3.min(thrs[xDimSS],parseFloat),
+                 d3.max(thrs[xDimSS],parseFloat)])
+        .range([margin.left, width - margin.right])
+  
+  yScalePS = d3.scaleLinear()
+        .domain([d3.min(thrs[yDimPS],parseFloat),
+                 d3.max(thrs[yDimPS],parseFloat)])
+        .range([height - margin.bottom, margin.top])
+  yScaleSS = d3.scaleLinear()
+        .domain([d3.min(thrs[yDimSS],parseFloat),
+                 d3.max(thrs[yDimSS],parseFloat)])
+        .range([height - margin.bottom, margin.top])
+  
+  // Definitions of D3 brush objects for plots in visualisation (each plot can be brushed in both axis separately)      
+  brushXPS = d3.brushX()
+      .extent([[margin.left, 0], [width-margin.right, margin.bottom]])
+      .on("end", brushedX_PS)
+      
+  brushYPS = d3.brushY()
+      .extent([[-margin.left, margin.top], [0, height-margin.bottom]])
+      .on("end", brushedY_PS)
+      
+  brushXSS = d3.brushX()
+      .extent([[margin.left, 0], [width-margin.right, margin.bottom]])
+      .on("end", brushedX_SS)
+      
+  brushYSS = d3.brushY()
+      .extent([[-margin.left, margin.top], [0, height-margin.bottom]])
+      .on("end", brushedY_SS)
+  
+  // Definitions of D3 zoom objects for plots in vis
+  // TODO: boundaries are moving when zooming in
+  zoomPS = d3.zoom()
+            .scaleExtent([1, Infinity])
+            .translateExtent([[0,0],[width,height]])
+            .on("zoom", zoomed_PS)
+  zoomSS = d3.zoom()
+            .scaleExtent([1, Infinity])
+            .translateExtent([[0,0],[width,height]])
+            .on("zoom", zoomed_SS)
+            
+  svgPS = d3.select("#plot_ps").append("svg")
+        .attr("width", width)
+        .attr("height", height)
+  svgSS = d3.select("#plot_ss").append("svg")
+        .attr("width", width)
+        .attr("height", height)
+  
+  containerPS = svgPS.append("g")
+          .attr("class", "containers")
+          .attr("id","cont_ps")
+          .attr("pointer-events", "all")
+          //.attr("transform", "translate("+(margin.left)+","+(margin.top)+")")
+          .call(zoomPS)
+  containerSS = svgSS.append("g")
+          .attr("class", "containers")
+          .attr("id","cont_ss")
+          .attr("pointer-events", "all")
+          //.attr("transform", "translate("+(margin.left)+","+(margin.top)+")")
+          .call(zoomSS)
           
-var svgPS = d3.select("body").append("svg")
-      .attr("width", width)
-      .attr("height", height),
-    svgSS = d3.select("body").append("svg")
-      .attr("width", width)
-      .attr("height", height)
-
-var containerPS = svgPS.append("g")
-        .attr("class", "containers")
-        .attr("id","cont_ps")
-        //.attr("transform", "translate("+(margin.left)+","+(margin.top)+")")
-        .call(zoomPS),
-    containerSS = svgSS.append("g")
-        .attr("class", "containers")
-        .attr("id","cont_ss")
-        //.attr("transform", "translate("+(margin.left)+","+(margin.top)+")")
-        .call(zoomSS)
-        
   // important box to cover svg content outside the axis-bounded window while zooming or moving 
   svgPS.append("rect")
       .attr("x", 0)
@@ -894,122 +931,127 @@ var containerPS = svgPS.append("g")
       .attr("width", margin.right)
       .attr("height", height)
       .attr("fill", bgColor)
+  
+  xLabelPS = svgPS.append("text")
+        .attr("id", "xLabelPS")
+        .attr("class", "label")
+        .attr("x", width*0.5)
+        .attr("y", height-10)
+        .attr("stroke", "black")
+        .text(function() { return xDimPS; })
+  xLabelSS = svgSS.append("text")
+        .attr("id", "xlabelSS")
+        .attr("class", "label")
+        .attr("x", width*0.5)
+        .attr("y", height-10)
+        .attr("stroke", "black")
+        .text(function() { return xDimSS; })
+  yLabelPS = svgPS.append("text")
+        .attr("id", "yLabelPS")
+        .attr("class", "label")
+        .attr("transform", "rotate(-90)")
+        .attr("x", -height*0.5)
+        .attr("y", 15)
+        .attr("stroke", "black")
+        .text(function() { return yDimPS; })
+  yLabelSS = svgSS.append("text")
+        .attr("id", "yLabelSS")
+        .attr("class", "label")
+        .attr("transform", "rotate(-90)")
+        .attr("x", -height*0.5)
+        .attr("y", 15)
+        .attr("stroke", "black")
+        .text(function() { return yDimSS; })
+  
+  defs = svgPS.append("svg:defs")
+  defs.append("svg:marker")
+  		.attr("id", "greenCross")
+  		.attr("viewBox", "0 0 "+edgelen+" "+edgelen)
+  		.attr("refX", 0.5*edgelen)
+  		.attr("refY", 0.5*edgelen)
+  		.attr("markerWidth", edgelen)
+  		.attr("markerHeight", edgelen)
+  		.attr("orient","auto")
+      .append("svg:path")
+        .attr("stroke", positive_col)
+        //.attr("stroke-width", markerWidth)
+  			.attr("d", "M0,"+(0)+" L"+edgelen+","+edgelen+" M0,"+edgelen+" L"+edgelen+",0")
+  			.attr("class","clickMark")
+  defs.append("svg:marker")
+  		.attr("id", "redCross")
+  		.attr("viewBox", "0 0 "+edgelen+" "+edgelen)
+  		.attr("refX", 0.5*edgelen)
+  		.attr("refY", 0.5*edgelen)
+  		.attr("markerWidth", edgelen)
+  		.attr("markerHeight", edgelen)
+  		.attr("orient","auto")
+      .append("svg:path")
+        .attr("stroke", negative_col)
+        //.attr("stroke-width", markerWidth)
+  			.attr("d", "M0,"+(0)+" L"+edgelen+","+edgelen+" M0,"+edgelen+" L"+edgelen+",0")
+  			.attr("class","arrowHead")
+  
+  bottomPanelPS = svgPS.append("g")
+      .attr("id", "bPanelPS")
+      .attr("class", "panel")
+      .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")")
+  xAxisPS = d3.axisBottom(xScalePS)
+  gXPS = bottomPanelPS.append("g")
+      .attr("id", "xAxisPS")
+      .attr("class", "axis")
+      .call(xAxisPS); // Create an axis component with d3.axisBottom
+  gBXPS = bottomPanelPS.append("g")
+      .attr("id", "xBrushPS")
+      .attr("class", "brush")
+      .call(brushXPS);
+      
+  leftPanelPS = svgPS.append("g")
+      .attr("id", "lPanelPS")
+      .attr("class", "panel")
+      .attr("transform", "translate("+(margin.left)+","+(0)+")")
+  yAxisPS = d3.axisLeft(yScalePS)
+  gYPS = leftPanelPS.append("g")
+      .attr("id", "yAxisPS")
+      .attr("class", "axis")
+      .call(yAxisPS); // Create an axis component with d3.axisLeft
+  gBYPS = leftPanelPS.append("g")
+      .attr("id", "xBrushPS")
+      .attr("class", "brush")
+      .call(brushYPS);
+  
+  bottomPanelSS = svgSS.append("g")
+      .attr("id", "bPanelSS")
+      .attr("class", "panel")
+      .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")")
+  xAxisSS = d3.axisBottom(xScaleSS)
+  gXSS = bottomPanelSS.append("g")
+      .attr("id", "xAxisSS")
+      .attr("class", "axis")
+      .call(xAxisSS); // Create an axis component with d3.axisBottom
+  gBXSS = bottomPanelSS.append("g")
+      .attr("id", "xBrushSS")
+      .attr("class", "brush")
+      .call(brushXSS);
+      
+  leftPanelSS = svgSS.append("g")
+      .attr("id", "lPanelSS")
+      .attr("class", "panel")
+      .attr("transform", "translate("+(margin.left)+","+(0)+")")
+  yAxisSS = d3.axisLeft(yScaleSS)
+  gYSS = leftPanelSS.append("g")
+      .attr("id", "yAxisSS")
+      .attr("class", "axis")
+      .call(yAxisSS); // Create an axis component with d3.axisLeft
+  gBYSS = leftPanelSS.append("g")
+      .attr("id", "xBrushSS")
+      .attr("class", "brush")
+      .call(brushYSS);
+      
+  d3.select("#infoPanel_PS").property("innerHTML", infoPanel_PS_lines.join("\n"))
+  d3.select("#infoPanel_SS").property("innerHTML", infoPanel_SS_lines.join("\n"))
+}
 
-var xLabelPS = svgPS.append("text")
-      .attr("id", "xLabelPS")
-      .attr("class", "label")
-      .attr("x", width*0.5)
-      .attr("y", height-10)
-      .attr("stroke", "black")
-      .text(function() { return xDimPS; }),
-    xLabelSS = svgSS.append("text")
-      .attr("id", "xlabelSS")
-      .attr("class", "label")
-      .attr("x", width*0.5)
-      .attr("y", height-10)
-      .attr("stroke", "black")
-      .text(function() { return xDimSS; })
-var yLabelPS = svgPS.append("text")
-      .attr("id", "yLabelPS")
-      .attr("class", "label")
-      .attr("transform", "rotate(-90)")
-      .attr("x", -height*0.5)
-      .attr("y", 15)
-      .attr("stroke", "black")
-      .text(function() { return yDimPS; }),
-    yLabelSS = svgSS.append("text")
-      .attr("id", "yLabelSS")
-      .attr("class", "label")
-      .attr("transform", "rotate(-90)")
-      .attr("x", -height*0.5)
-      .attr("y", 15)
-      .attr("stroke", "black")
-      .text(function() { return yDimSS; })
-
-var defs = svgPS.append("svg:defs");
-defs.append("svg:marker")
-		.attr("id", "greenCross")
-		.attr("viewBox", "0 0 "+edgelen+" "+edgelen)
-		.attr("refX", 0.5*edgelen)
-		.attr("refY", 0.5*edgelen)
-		.attr("markerWidth", edgelen)
-		.attr("markerHeight", edgelen)
-		.attr("orient","auto")
-    .append("svg:path")
-      .attr("stroke", positive_col)
-      //.attr("stroke-width", markerWidth)
-			.attr("d", "M0,"+(0)+" L"+edgelen+","+edgelen+" M0,"+edgelen+" L"+edgelen+",0")
-			.attr("class","clickMark");
-defs.append("svg:marker")
-		.attr("id", "redCross")
-		.attr("viewBox", "0 0 "+edgelen+" "+edgelen)
-		.attr("refX", 0.5*edgelen)
-		.attr("refY", 0.5*edgelen)
-		.attr("markerWidth", edgelen)
-		.attr("markerHeight", edgelen)
-		.attr("orient","auto")
-    .append("svg:path")
-      .attr("stroke", negative_col)
-      //.attr("stroke-width", markerWidth)
-			.attr("d", "M0,"+(0)+" L"+edgelen+","+edgelen+" M0,"+edgelen+" L"+edgelen+",0")
-			.attr("class","arrowHead");
-
-var bottomPanelPS = svgPS.append("g")
-    .attr("id", "bPanelPS")
-    .attr("class", "panel")
-    .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")");
-var xAxisPS = d3.axisBottom(xScalePS);
-var gXPS = bottomPanelPS.append("g")
-    .attr("id", "xAxisPS")
-    .attr("class", "axis")
-    .call(xAxisPS); // Create an axis component with d3.axisBottom
-var gBXPS = bottomPanelPS.append("g")
-    .attr("id", "xBrushPS")
-    .attr("class", "brush")
-    .call(brushXPS);
-    
-var leftPanelPS = svgPS.append("g")
-    .attr("id", "lPanelPS")
-    .attr("class", "panel")
-    .attr("transform", "translate("+(margin.left)+","+(0)+")");
-var yAxisPS = d3.axisLeft(yScalePS);
-var gYPS = leftPanelPS.append("g")
-    .attr("id", "yAxisPS")
-    .attr("class", "axis")
-    .call(yAxisPS); // Create an axis component with d3.axisLeft
-var gBYPS = leftPanelPS.append("g")
-    .attr("id", "xBrushPS")
-    .attr("class", "brush")
-    .call(brushYPS);
-
-var bottomPanelSS = svgSS.append("g")
-    .attr("id", "bPanelSS")
-    .attr("class", "panel")
-    .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")");
-var xAxisSS = d3.axisBottom(xScaleSS);
-var gXSS = bottomPanelSS.append("g")
-    .attr("id", "xAxisSS")
-    .attr("class", "axis")
-    .call(xAxisSS); // Create an axis component with d3.axisBottom
-var gBXSS = bottomPanelSS.append("g")
-    .attr("id", "xBrushSS")
-    .attr("class", "brush")
-    .call(brushXSS);
-    
-var leftPanelSS = svgSS.append("g")
-    .attr("id", "lPanelSS")
-    .attr("class", "panel")
-    .attr("transform", "translate("+(margin.left)+","+(0)+")");
-var yAxisSS = d3.axisLeft(yScaleSS);
-var gYSS = leftPanelSS.append("g")
-    .attr("id", "yAxisSS")
-    .attr("class", "axis")
-    .call(yAxisSS); // Create an axis component with d3.axisLeft
-var gBYSS = leftPanelSS.append("g")
-    .attr("id", "xBrushSS")
-    .attr("class", "brush")
-    .call(brushYSS);
-
+initiate()
 result_data_relevance()
 compute_projection()
 draw_PS()
@@ -1298,6 +1340,17 @@ function zoomed_SS() {
   // reset brushes
   gBXSS.call(brushXSS.move, null);
   gBYSS.call(brushYSS.move, null);
+  
+  for(var v = 0; v < window.bio.vars.length; v++) {
+    var key = window.bio.vars[v]
+    if(key == xDimSS)
+      infoPanel_SS_lines[v+1] = [key,": [",zoomObject_SS.rescaleX(xScaleSS).domain()[0].toFixed(3),
+                                   ", ",zoomObject_SS.rescaleX(xScaleSS).domain()[1].toFixed(3),"]"].join("")
+    else if(key == yDimSS)
+      infoPanel_SS_lines[v+1] = [key,": [",zoomObject_SS.rescaleY(yScaleSS).domain()[0].toFixed(3),
+                                   ", ",zoomObject_SS.rescaleY(yScaleSS).domain()[1].toFixed(3),"]"].join("")
+  }
+  d3.select("#infoPanel_SS").property("innerHTML", infoPanel_SS_lines.join("\n"))
 }
 function brushedX_SS() {
   if (!d3.event.sourceEvent) return; // Only transition after input.
@@ -1387,6 +1440,41 @@ function zoomed_PS() {
   // reset brushes
   gBXPS.call(brushXPS.move, null);
   gBYPS.call(brushYPS.move, null);
+    
+  resetInfoPanel_PS()
+}
+function resetInfoPanel_PS() {
+  var off = 2
+  for(var v = 0; v < window.bio.params.length; v++) {
+    var key = window.bio.params[v][0]
+    if(key == xDimPS)
+      infoPanel_PS_lines[v+off] = [key,": [",zoomObject_PS.rescaleX(xScalePS).domain()[0].toFixed(3),
+                                    ", ",zoomObject_PS.rescaleX(xScalePS).domain()[1].toFixed(3),"]"].join("")
+    else if(key == yDimPS)
+      infoPanel_PS_lines[v+off] = [key,": [",zoomObject_PS.rescaleY(yScalePS).domain()[0].toFixed(3),
+                                    ", ",zoomObject_PS.rescaleY(yScalePS).domain()[1].toFixed(3),"]"].join("")
+    else 
+      infoPanel_PS_lines[v+off] = [key,": [",Number(window.bio.params[v][1]).toFixed(3),
+                                    ", ",Number(window.bio.params[v][2]).toFixed(3),"]"].join("")
+    if(param_bounds[v] !== null)
+      infoPanel_PS_lines[v+off] += [" (",Number(param_bounds[v]).toFixed(3),")"].join("")
+  }
+  off += window.bio.params.length
+  for(var v = 0; v < window.bio.vars.length; v++) {
+    var key = window.bio.vars[v]
+    if(key == xDimPS)
+      infoPanel_PS_lines[v+off] = [key,": [",zoomObject_PS.rescaleX(xScalePS).domain()[0].toFixed(3),
+                                    ", ",zoomObject_PS.rescaleX(xScalePS).domain()[1].toFixed(3),"]"].join("")
+    else if(key == yDimPS)
+      infoPanel_PS_lines[v+off] = [key,": [",zoomObject_PS.rescaleY(yScalePS).domain()[0].toFixed(3),
+                                    ", ",zoomObject_PS.rescaleY(yScalePS).domain()[1].toFixed(3),"]"].join("")
+    else 
+      infoPanel_PS_lines[v+off] = [key,": [",Number(d3.min(thrs[key])).toFixed(3),
+                                    ", ",Number(d3.max(thrs[key])).toFixed(3),"]"].join("")
+    if(var_bounds[v] !== null)
+      infoPanel_PS_lines[v+off] += [" (",Number(var_bounds[v]).toFixed(3),")"].join("")
+  }
+  d3.select("#infoPanel_PS").property("innerHTML", infoPanel_PS_lines.join("\n"))
 }
 function brushedX_PS() {
   if (!d3.event.sourceEvent) return; // Only transition after input.
@@ -1418,12 +1506,10 @@ function brushedY_PS() {
   zoomed_PS();
 }
 function handleMouseOver_PS(d, i) {
-  var div = document.getElementById("infoPanel_PS");
   var mouse = d3.mouse(this)
   mouse = window.result.type == 'smt' ? mouse : [zoomObject_PS.rescaleX(xScalePS).invert(mouse[0]), zoomObject_PS.rescaleY(yScalePS).invert(mouse[1])]
   var p_count = 0,
-      s_count = 0,
-      content = "";
+      s_count = 0;
       
   if(d3.select(this).attr("class") == "interval") {
     if(window.result.type == 'smt') {
@@ -1447,35 +1533,33 @@ function handleMouseOver_PS(d, i) {
   }
   
   mouse = [zoomObject_PS.rescaleX(xScalePS).invert(d3.mouse(this)[0]), zoomObject_PS.rescaleY(yScalePS).invert(d3.mouse(this)[1])]
-  content += "States covered: "+s_count;
-  content += "\nParametrisations covered: "+p_count;
+  infoPanel_PS_lines[0] = "States cov: "+s_count
+  infoPanel_PS_lines[1] = "Param. cov: "+p_count
+  var off = 2
   for(var v = 0, len = window.bio.params.length; v < len; ++v) {
-    var key = window.bio.params[v];
-    content += "\n"+key[0]+": "+(key[0] == xDimPS ? mouse[0].toFixed(4) : 
-                                  (key[0] == yDimPS ? mouse[1].toFixed(4) : 
-                                    (d3.select("#checkbox_PS_"+key[0]).property("checked") ? "["+key[1]+"-"+key[2]+"]" :
-                                      d3.select("#slider_PS_"+key[0]).property("value"))));
+    var key = window.bio.params[v][0]
+    if(key == xDimPS)
+      infoPanel_PS_lines[v+off] = key+": "+mouse[0].toFixed(3)+(param_bounds[v] !== null ? [" (",Number(param_bounds[v]).toFixed(3),")"].join("") : "")
+    else if(key== yDimPS) 
+      infoPanel_PS_lines[v+off] = key+": "+mouse[1].toFixed(3)+(param_bounds[v] !== null ? [" (",Number(param_bounds[v]).toFixed(3),")"].join("") : "")
   }
-  
-  div.value = content;
+  off += window.bio.params.length
+  for(var v = 0, len = window.bio.vars.length; v < len; ++v) {
+    var key = window.bio.vars[v]
+    if(key == xDimPS)
+      infoPanel_PS_lines[v+off] = key+": "+mouse[0].toFixed(3)+(var_bounds[v] !== null ? [" (",Number(var_bounds[v]).toFixed(3),")"].join("") : "")
+    else if(key== yDimPS) 
+      infoPanel_PS_lines[v+off] = key+": "+mouse[1].toFixed(3)+(var_bounds[v] !== null ? [" (",Number(var_bounds[v]).toFixed(3),")"].join("") : "")
+  }
+  d3.select("#infoPanel_PS").property("innerHTML", infoPanel_PS_lines.join("\n"))
 }
 function handleMouseOut_PS(d, i) {
-  var div = document.getElementById("infoPanel_PS");
-  var p_count = 0,
-      s_count = 0,
-      content = "";
+  var p_count = "unknown",
+      s_count = "unknown"
       
-  content += "States covered: "+s_count;
-  content += "\nParametrisations covered: "+p_count;
-  for(var v = 0, len = window.bio.params.length; v < len; ++v) {
-    var key = window.bio.params[v];
-    content += "\n"+key[0]+": "+(key[0] == xDimPS ? "["+zoomObject_PS.rescaleX(xScalePS).domain()[0].toFixed(4)+"-"+zoomObject_PS.rescaleX(xScalePS).domain()[1].toFixed(4)+"]" : 
-                                  (key[0] == yDimPS ? "["+zoomObject_PS.rescaleY(yScalePS).domain()[0].toFixed(4)+"-"+zoomObject_PS.rescaleY(yScalePS).domain()[1].toFixed(4)+"]" : 
-                                    (d3.select("#checkbox_PS_"+key[0]).property("checked") ? "["+key[1]+"-"+key[2]+"]" :
-                                      d3.select("#slider_PS_"+key[0]).property("value"))));
-  }
-  
-  div.value = content;
+  infoPanel_PS_lines[0] = "States cov: "+s_count;
+  infoPanel_PS_lines[1] = "Param. cov: "+p_count;
+  resetInfoPanel_PS()
 }
 function redrawClickedPoints() {
   containerPS.selectAll(".marker")
