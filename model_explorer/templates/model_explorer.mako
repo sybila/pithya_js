@@ -732,13 +732,7 @@ function initiate_VF() {
       .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")");
       
   xAxis_VF = d3.axisBottom(xScale_VF)
-      .tickFormat(
-        d3.format(
-          Math.abs(xScale_VF.domain()[0]) <  0.01 ||
-          Math.abs(xScale_VF.domain()[0]) >= 1000 ||
-          Math.abs(xScale_VF.domain()[1]) <  0.01 ||
-          Math.abs(xScale_VF.domain()[1]) >= 1000 ?
-          ".2~e" : ".3~r"));
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d)))
   gX_VF = bottomPanel_VF.append("g")
       .attr("id", "xAxis_VF")
       .attr("class", "axis")
@@ -754,13 +748,7 @@ function initiate_VF() {
       .attr("transform", "translate("+margin.left+","+0+")");
   
   yAxis_VF = d3.axisLeft(yScale_VF)
-      .tickFormat(
-        d3.format(
-          Math.abs(yScale_VF.domain()[0]) <  0.01 ||
-          Math.abs(yScale_VF.domain()[0]) >= 1000 ||
-          Math.abs(yScale_VF.domain()[1]) <  0.01 ||
-          Math.abs(yScale_VF.domain()[1]) >= 1000 ?
-          ".2~e" : ".3~r"));
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d)))
   gY_VF = leftPanel_VF.append("g")
       .attr("id", "yAxis_VF")
       .attr("class", "axis")
@@ -872,13 +860,7 @@ function initiate_TSS() {
       .attr("transform", "translate("+0+","+(height-margin.bottom)+")");
       
   xAxis = d3.axisBottom(xScale)
-      .tickFormat(
-        d3.format(
-          Math.abs(xScale.domain()[0]) <  0.01 ||
-          Math.abs(xScale.domain()[0]) >= 1000 ||
-          Math.abs(xScale.domain()[1]) <  0.01 ||
-          Math.abs(xScale.domain()[1]) >= 1000 ?
-          ".2~e" : ".3~r"));
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d)))
   gX = bottomPanel.append("g")
       .attr("id", "xAxis")
       .attr("class", "axis")
@@ -894,13 +876,7 @@ function initiate_TSS() {
       .attr("transform", "translate("+margin.left+","+0+")");
   
   yAxis = d3.axisLeft(yScale)
-      .tickFormat(
-        d3.format(
-          Math.abs(yScale.domain()[0]) <  0.01 ||
-          Math.abs(yScale.domain()[0]) >= 1000 ||
-          Math.abs(yScale.domain()[1]) <  0.01 ||
-          Math.abs(yScale.domain()[1]) >= 1000 ?
-          ".2~e" : ".3~r"));
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d)))
   gY = leftPanel.append("g")
       .attr("id", "yAxis")
       .attr("class", "axis")
@@ -1005,8 +981,10 @@ function zoomed_VF() {
   draw_VF();
   if(reach_start_VF !== null) reach_VF(null);
   
-  gX_VF.call(xAxis_VF.scale(zoomObject_VF.rescaleX(xScale_VF)))
-  gY_VF.call(yAxis_VF.scale(zoomObject_VF.rescaleY(yScale_VF)))
+  gX_VF.call(xAxis_VF.scale(zoomObject_VF.rescaleX(xScale_VF))
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d))))
+  gY_VF.call(yAxis_VF.scale(zoomObject_VF.rescaleY(yScale_VF))
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d))))
   // reset brushes
   gBX_VF.call(brushX_VF.move, null)
   gBY_VF.call(brushY_VF.move, null)
@@ -1441,9 +1419,11 @@ function update_axes() {
   yScale.domain([d3.min(thrs[yDim],parseFloat),
                  d3.max(thrs[yDim],parseFloat)])
   // Update an axis component according to selected dimensions
-  xAxis = d3.axisBottom(xScale);
+  xAxis = d3.axisBottom(xScale)
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d)));
   gX.call(xAxis);
-  yAxis = d3.axisLeft(yScale);
+  yAxis = d3.axisLeft(yScale)
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d)));
   gY.call(yAxis);
   // reset brushes
   gBX.call(brushX.move, null);
@@ -1481,8 +1461,10 @@ function zoomed() {
     .attr("width", d => x(d.x1)-x(d.x))
     .attr("height", d => y(d.y1)-y(d.y))
   
-  gX.call(xAxis.scale(x))
-  gY.call(yAxis.scale(y))
+  gX.call(xAxis.scale(x)
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d))))
+  gY.call(yAxis.scale(y)
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d))))
   // reset brushes
   gBX.call(brushX.move, null)
   gBY.call(brushY.move, null)

@@ -157,7 +157,7 @@
   <head>
     <title>Parameter Space</title>
   	<script src="https://d3js.org/d3.v4.js" charset="utf-8"></script>
-  	<script src="https://unpkg.com/mathjs@5.3.1/dist/math.min.js" />
+  	<script src="https://unpkg.com/mathjs@5.3.1/dist/math.min.js"></script>
     <script type="text/javascript" src="static/js/d3-format/d3-format.min.js"></script>
   	<script type="text/javascript" charset="utf-8">
       // definition of functions used in bio files so there is no need to transorm them 
@@ -1024,13 +1024,7 @@ function initiate() {
       .attr("class", "panel")
       .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")")
   xAxisPS = d3.axisBottom(xScalePS)
-      .tickFormat(
-        d3.format(
-          Math.abs(xScalePS.domain()[0]) <  0.01 ||
-          Math.abs(xScalePS.domain()[0]) >= 1000 ||
-          Math.abs(xScalePS.domain()[1]) <  0.01 ||
-          Math.abs(xScalePS.domain()[1]) >= 1000 ?
-          ".2~e" : ".3~r"));
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d)))
   gXPS = bottomPanelPS.append("g")
       .attr("id", "xAxisPS")
       .attr("class", "axis")
@@ -1045,13 +1039,7 @@ function initiate() {
       .attr("class", "panel")
       .attr("transform", "translate("+(margin.left)+","+(0)+")")
   yAxisPS = d3.axisLeft(yScalePS)
-      .tickFormat(
-        d3.format(
-          Math.abs(yScalePS.domain()[0]) <  0.01 ||
-          Math.abs(yScalePS.domain()[0]) >= 1000 ||
-          Math.abs(yScalePS.domain()[1]) <  0.01 ||
-          Math.abs(yScalePS.domain()[1]) >= 1000 ?
-          ".2~e" : ".3~r"));
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d)))
   gYPS = leftPanelPS.append("g")
       .attr("id", "yAxisPS")
       .attr("class", "axis")
@@ -1066,13 +1054,7 @@ function initiate() {
       .attr("class", "panel")
       .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")")
   xAxisSS = d3.axisBottom(xScaleSS)
-      .tickFormat(
-        d3.format(
-          Math.abs(xScaleSS.domain()[0]) <  0.01 ||
-          Math.abs(xScaleSS.domain()[0]) >= 1000 ||
-          Math.abs(xScaleSS.domain()[1]) <  0.01 ||
-          Math.abs(xScaleSS.domain()[1]) >= 1000 ?
-          ".2~e" : ".3~r"));
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d)))
   gXSS = bottomPanelSS.append("g")
       .attr("id", "xAxisSS")
       .attr("class", "axis")
@@ -1087,13 +1069,7 @@ function initiate() {
       .attr("class", "panel")
       .attr("transform", "translate("+(margin.left)+","+(0)+")")
   yAxisSS = d3.axisLeft(yScaleSS)
-      .tickFormat(
-        d3.format(
-          Math.abs(yScaleSS.domain()[0]) <  0.01 ||
-          Math.abs(yScaleSS.domain()[0]) >= 1000 ||
-          Math.abs(yScaleSS.domain()[1]) <  0.01 ||
-          Math.abs(yScaleSS.domain()[1]) >= 1000 ?
-          ".2~e" : ".3~r"));
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d)))
   gYSS = leftPanelSS.append("g")
       .attr("id", "yAxisSS")
       .attr("class", "axis")
@@ -1388,9 +1364,11 @@ function update_axes_SS() {
   yScaleSS.domain([d3.min(thrs[yDimSS],parseFloat),
                    d3.max(thrs[yDimSS],parseFloat)])
   // Update an axis component according to selected dimensions
-  xAxisSS = d3.axisBottom(xScaleSS);
+  xAxisSS = d3.axisBottom(xScaleSS)
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d)));
   gXSS.call(xAxisSS);
-  yAxisSS = d3.axisLeft(yScaleSS);
+  yAxisSS = d3.axisLeft(yScaleSS)
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d)));
   gYSS.call(yAxisSS);
   // reset brushes
   gBXSS.call(brushXSS.move, null);
@@ -1413,8 +1391,10 @@ function zoomed_SS() {
     .attr("width", d => x(d.x1)-x(d.x))
     .attr("height", d => y(d.y1)-y(d.y))
   
-  gXSS.call(xAxisSS.scale(x));
-  gYSS.call(yAxisSS.scale(y));
+  gXSS.call(xAxisSS.scale(x)
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d))));
+  gYSS.call(yAxisSS.scale(y)
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d))));
   // reset brushes
   gBXSS.call(brushXSS.move, null);
   gBYSS.call(brushYSS.move, null);
@@ -1479,9 +1459,11 @@ function update_axes_PS() {
   yScalePS.domain([d3.min(thrs[yDimPS],parseFloat),
                    d3.max(thrs[yDimPS],parseFloat)])
   // Update an axis component according to selected dimensions
-  xAxisPS = d3.axisBottom(xScalePS);
+  xAxisPS = d3.axisBottom(xScalePS)
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d)))
   gXPS.call(xAxisPS);
-  yAxisPS = d3.axisLeft(yScalePS);
+  yAxisPS = d3.axisLeft(yScalePS)
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d)))
   gYPS.call(yAxisPS);
   // reset brushes
   gBXPS.call(brushXPS.move, null);
@@ -1523,8 +1505,10 @@ function zoomed_PS() {
   })
   redrawClickedPoints()
   
-  gXPS.call(xAxisPS.scale(x));
-  gYPS.call(yAxisPS.scale(y));
+  gXPS.call(xAxisPS.scale(x)
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d))));
+  gYPS.call(yAxisPS.scale(y)
+      .tickFormat(d => d == 0 ? "0" : (d < 0.01 || d >= 1000 ? d3.format(".2~e")(d) : d3.format(".3~r")(d))));
   // reset brushes
   gBXPS.call(brushXPS.move, null);
   gBYPS.call(brushYPS.move, null);
