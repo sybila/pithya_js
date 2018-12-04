@@ -80,6 +80,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <script src="http://d3js.org/d3.v4.min.js"></script>
+    <script type="text/javascript" src="static/js/d3-format/d3-format.min.js"></script>
     
     <script type="text/javascript" charset="utf-8">
       // definition of functions used in bio files so there is no need to transorm them 
@@ -730,7 +731,14 @@ function initiate_VF() {
       .attr("class", "panel")
       .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")");
       
-  xAxis_VF = d3.axisBottom(xScale_VF);
+  xAxis_VF = d3.axisBottom(xScale_VF)
+      .tickFormat(
+        d3.format(
+          Math.abs(xScale_VF.domain()[0]) <  0.01 ||
+          Math.abs(xScale_VF.domain()[0]) >= 1000 ||
+          Math.abs(xScale_VF.domain()[1]) <  0.01 ||
+          Math.abs(xScale_VF.domain()[1]) >= 1000 ?
+          ".2~e" : ".3~r"));
   gX_VF = bottomPanel_VF.append("g")
       .attr("id", "xAxis_VF")
       .attr("class", "axis")
@@ -745,7 +753,14 @@ function initiate_VF() {
       .attr("class", "panel")
       .attr("transform", "translate("+margin.left+","+0+")");
   
-  yAxis_VF = d3.axisLeft(yScale_VF);
+  yAxis_VF = d3.axisLeft(yScale_VF)
+      .tickFormat(
+        d3.format(
+          Math.abs(yScale_VF.domain()[0]) <  0.01 ||
+          Math.abs(yScale_VF.domain()[0]) >= 1000 ||
+          Math.abs(yScale_VF.domain()[1]) <  0.01 ||
+          Math.abs(yScale_VF.domain()[1]) >= 1000 ?
+          ".2~e" : ".3~r"));
   gY_VF = leftPanel_VF.append("g")
       .attr("id", "yAxis_VF")
       .attr("class", "axis")
@@ -856,7 +871,14 @@ function initiate_TSS() {
       .style("background-color","red")
       .attr("transform", "translate("+0+","+(height-margin.bottom)+")");
       
-  xAxis = d3.axisBottom(xScale);
+  xAxis = d3.axisBottom(xScale)
+      .tickFormat(
+        d3.format(
+          Math.abs(xScale.domain()[0]) <  0.01 ||
+          Math.abs(xScale.domain()[0]) >= 1000 ||
+          Math.abs(xScale.domain()[1]) <  0.01 ||
+          Math.abs(xScale.domain()[1]) >= 1000 ?
+          ".2~e" : ".3~r"));
   gX = bottomPanel.append("g")
       .attr("id", "xAxis")
       .attr("class", "axis")
@@ -871,7 +893,14 @@ function initiate_TSS() {
       .attr("class", "panel")
       .attr("transform", "translate("+margin.left+","+0+")");
   
-  yAxis = d3.axisLeft(yScale);
+  yAxis = d3.axisLeft(yScale)
+      .tickFormat(
+        d3.format(
+          Math.abs(yScale.domain()[0]) <  0.01 ||
+          Math.abs(yScale.domain()[0]) >= 1000 ||
+          Math.abs(yScale.domain()[1]) <  0.01 ||
+          Math.abs(yScale.domain()[1]) >= 1000 ?
+          ".2~e" : ".3~r"));
   gY = leftPanel.append("g")
       .attr("id", "yAxis")
       .attr("class", "axis")

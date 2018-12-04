@@ -158,7 +158,7 @@
     <title>Parameter Space</title>
   	<script src="https://d3js.org/d3.v4.js" charset="utf-8"></script>
   	<script src="https://unpkg.com/mathjs@5.3.1/dist/math.min.js" />
-    <!-- script src="static/mathjs-4.4.2/dist/math.min.js"></script -->
+    <script type="text/javascript" src="static/js/d3-format/d3-format.min.js"></script>
   	<script type="text/javascript" charset="utf-8">
       // definition of functions used in bio files so there is no need to transorm them 
       function Hillm(x,t,n,b,a) {
@@ -1024,6 +1024,13 @@ function initiate() {
       .attr("class", "panel")
       .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")")
   xAxisPS = d3.axisBottom(xScalePS)
+      .tickFormat(
+        d3.format(
+          Math.abs(xScalePS.domain()[0]) <  0.01 ||
+          Math.abs(xScalePS.domain()[0]) >= 1000 ||
+          Math.abs(xScalePS.domain()[1]) <  0.01 ||
+          Math.abs(xScalePS.domain()[1]) >= 1000 ?
+          ".2~e" : ".3~r"));
   gXPS = bottomPanelPS.append("g")
       .attr("id", "xAxisPS")
       .attr("class", "axis")
@@ -1038,6 +1045,13 @@ function initiate() {
       .attr("class", "panel")
       .attr("transform", "translate("+(margin.left)+","+(0)+")")
   yAxisPS = d3.axisLeft(yScalePS)
+      .tickFormat(
+        d3.format(
+          Math.abs(yScalePS.domain()[0]) <  0.01 ||
+          Math.abs(yScalePS.domain()[0]) >= 1000 ||
+          Math.abs(yScalePS.domain()[1]) <  0.01 ||
+          Math.abs(yScalePS.domain()[1]) >= 1000 ?
+          ".2~e" : ".3~r"));
   gYPS = leftPanelPS.append("g")
       .attr("id", "yAxisPS")
       .attr("class", "axis")
@@ -1052,6 +1066,13 @@ function initiate() {
       .attr("class", "panel")
       .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")")
   xAxisSS = d3.axisBottom(xScaleSS)
+      .tickFormat(
+        d3.format(
+          Math.abs(xScaleSS.domain()[0]) <  0.01 ||
+          Math.abs(xScaleSS.domain()[0]) >= 1000 ||
+          Math.abs(xScaleSS.domain()[1]) <  0.01 ||
+          Math.abs(xScaleSS.domain()[1]) >= 1000 ?
+          ".2~e" : ".3~r"));
   gXSS = bottomPanelSS.append("g")
       .attr("id", "xAxisSS")
       .attr("class", "axis")
@@ -1066,6 +1087,13 @@ function initiate() {
       .attr("class", "panel")
       .attr("transform", "translate("+(margin.left)+","+(0)+")")
   yAxisSS = d3.axisLeft(yScaleSS)
+      .tickFormat(
+        d3.format(
+          Math.abs(yScaleSS.domain()[0]) <  0.01 ||
+          Math.abs(yScaleSS.domain()[0]) >= 1000 ||
+          Math.abs(yScaleSS.domain()[1]) <  0.01 ||
+          Math.abs(yScaleSS.domain()[1]) >= 1000 ?
+          ".2~e" : ".3~r"));
   gYSS = leftPanelSS.append("g")
       .attr("id", "yAxisSS")
       .attr("class", "axis")
