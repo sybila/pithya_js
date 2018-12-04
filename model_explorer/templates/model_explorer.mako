@@ -143,15 +143,20 @@
       };
     </script>
 
+    <link rel="stylesheet" type="text/css" href="static/css/bootstrap-reboot.css">
+    <link rel="stylesheet" type="text/css" href="static/css/ion.rangeSlider.css">
+    <link rel="stylesheet" type="text/css" href="static/css/ion.rangeSlider.skinShiny.css">
+    <link rel="stylesheet" type="text/css" href="static/css/simplex2.css">
+    <link rel="stylesheet" type="text/css" href="static/css/style.css">
     <style>
       body {
         background-color: white;
-        margin: 0;
+        margin-top: 10px;
         font-family: sans-serif;
-        font-size: 18px;
+        //font-size: 18px;
       }
       #cont_VF {
-        pointer-events: all;
+        //pointer-events: all;
       }
       #zoomObject_VF {
       }
@@ -163,55 +168,30 @@
         font-size: 15px;
       }
       .widget_panel {
-        position: absolute;
-        //top: 10px;
-        left: 560px;
-        //display: flex;
-        //flex-direction: column;
-        height: 100%;
-        width: 250px;
-        
       }
       #resetZoomBtn_VF {
-        position: absolute;
-        top: 10px;
       }
       #resetReachBtn_VF {
-        position: absolute;
-        top: 40px;
       }
       #elongateReachBtn_VF {
-        position: absolute;
-        top: 40px;
-        left: 80px;
       }
       #infoPanel_VF {
-        position: absolute;
-        top: 70px;
-        flex-grow: 1;
+        //flex-grow: 1;
       }
       #x_axis_div {
-        position: absolute;
-        top: 160px;
-        width: 90px;
       }
       #y_axis_div {
-        position: absolute;
-        top: 160px;
-        width: 90px;
-        left: 100px;
       }
       #slidecontainer_VF {
-        position: absolute;
-        top: 200px;
       }
       #inputs_div_VF {
-        position: absolute;
-        top: 450px;
+      }
+      .label {
+        font-size: 15px;
       }
       
       #cont {
-        pointer-events: all;
+        //pointer-events: all;
       }
       #zoomObject {
       }
@@ -225,185 +205,185 @@
         vector-effect: non-scaling-stroke; 
       }
       #resetZoomBtn {
-        position: absolute;
-        top: 10px;
       }
       #resetReachBtn {
-        position: absolute;
-        top: 40px;
       }
       #infoPanel {
-        position: absolute;
-        top: 70px;
-        flex-grow: 1;
+        //flex-grow: 1;
       }
       #x_axis_div {
-        position: absolute;
-        top: 160px;
-        width: 90px;
       }
       #y_axis_div {
-        position: absolute;
-        top: 160px;
-        width: 90px;
-        left: 100px;
       }
       #slidecontainer {
-        position: absolute;
-        top: 200px;
       }
       #inputs_div {
-        position: absolute;
-        top: 450px;
       }
     </style>
   </head>
     
   <body>
-    <div class="widget_panel">
-      <button id="resetZoomBtn_VF">Unzoom</button>
-      <button id="resetReachBtn_VF">Deselect</button>
-      <button id="elongateReachBtn_VF">Elongate</button>
-      <textarea id="infoPanel_VF" rows="${len(vars)+2}" cols="35" wrap="off" disabled></textarea>
-      <!-- dynamicly adds sliders with labels for parameters and variables (if more than 2 vars are present) in mako style -->
-      % if len(vars) > 2 or len(params) > 0:
-        <div id="slidecontainer_VF">
-        % if len(vars) > 2:
-        <hr>
-        % for val in vars:
-          <% 
-          min_val  = min(map(float,thrs[val]))
-          max_val  = max(map(float,thrs[val]))
-          step_val = abs(max_val-min_val)*0.01
-          %>
-          % if val == vars[0] or val == vars[1]:
-          <div id="slider_${val}_wrapper_VF" hidden>
-          % else:
-          <div id="slider_${val}_wrapper_VF">
-          % endif
-            var. ${val}: <span id="text_${val}_VF"></span><br>
-            <input type="range" min=${min_val} max=${max_val} value=${min_val} step=${step_val} class="slider" id="slider_${val}_VF">
-          </div>
-        % endfor
-        % endif
-        % if len(params) > 0:
-        <hr>
-        % for val in params:
-          <% 
-          min_val  = float(val[1])
-          max_val  = float(val[2])
-          step_val = abs(max_val-min_val)*0.001
-          %>
-          par. ${val[0]}: <span id="text_${val[0]}"></span><br>
-          <input type="range" min=${min_val} max=${max_val} value=${min_val} step=${step_val} class="slider" id="slider_${val[0]}"><br>
-        % endfor
-        % endif
+    <div class="row">
+        <div class="col-sm-12">
+				% if len(params) > 0:
+					% for val in params:
+					    <% 
+					    min_val  = float(val[1])
+					    max_val  = float(val[2])
+					    step_val = abs(max_val-min_val)*0.001
+					    %>
+						<div class="form-group param_slider">
+							<label class="control-label" for="slider_${val[0]}">Parameter ${val[0]}</label>
+							<input class="js-range-slider" id="slider_${val[0]}" data-min=${min_val} data-max=${max_val} data-from=${min_val} data-step=${step_val} 
+							  min=${min_val} max=${max_val} value=${min_val} step=${step_val} 
+							  data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
+						</div>
+					% endfor
+				% endif
         </div>
-      % endif
-      <div id="inputs_div_VF">
-        <hr>
-        arrows count: <span id="text_gridSize_VF"></span><br>
-        <input type="range" min=10 max=100 value=25 step=1 class="slider" id="input_gridSize_VF"><br>
-        derivative scale: <span id="text_dt_VF"></span><br>
-        <input type="range" min=0.01 max=1 value=1 step=0.01 class="slider" id="input_dt_VF"><br>
-        colouring threshold: <span id="text_color_thr_VF"></span><br>
-        <input type="range" min=0 max=0.1 value=0.05 step=0.01 class="slider" id="input_color_thr_VF"><br>
-        colouring orientation<br>
-        <select id="input_color_style_VF">
-          <option value="both">both</option>
-          <option value="vertical">vertical</option>
-          <option value="horizontal">horizontal</option>
-          <option value="none">none</option>
-        </select><br>
-      </div>
-      
-      <button id="resetZoomBtn">Unzoom</button>
-      <button id="resetReachBtn">Deselect</button>
-      <textarea id="infoPanel" rows="${len(vars)+1}" cols="35" wrap="off" disabled></textarea>
-      <!-- dynamicly adds sliders with labels for parameters and variables (if more than 2 vars are present) in mako style -->
-      <div id="x_axis_div">
-        X axis<br>
-        <select name="xAxis" id="x_axis" style="width:90px" required>
-          % for val in vars:
-            % if val == vars[0]:
-              <option value="${val}" selected>${val}</option>
-            % else:
-              <option value="${val}">${val}</option>
-            % endif
-          % endfor
-        </select>
-      </div>
-      <div id="y_axis_div">
-        Y axis<br>
-        <select name="yAxis" id="y_axis" style="width:90px" required>
-          % for val in vars:
-            % if len(vars) > 1 and val == vars[1]:
-              <option value="${val}" selected>${val}</option>
-            % else:
-              <option value="${val}">${val}</option>
-            % endif
-          % endfor
-        </select>
-      </div>
-      % if len(vars) > 2 or len(params) > 0:
-        <div id="slidecontainer">
-        % if len(vars) > 2:
-        <hr>
-        % for val in vars:
-          <% 
-          min_val  = min(map(float,thrs[val]))
-          max_val  = max(map(float,thrs[val]))
-          step_val = abs(max_val-min_val)*0.01
-          %>
-          % if val == vars[0] or val == vars[1]:
-          <div id="slider_${val}_wrapper" hidden>
-          % else:
-          <div id="slider_${val}_wrapper">
-          % endif
-            var. ${val}: <span id="text_${val}"></span><br>
-            <input type="range" min=${min_val} max=${max_val} value=${min_val} step=${step_val} class="slider" id="slider_${val}">
-          </div>
-        % endfor
-        % endif
-        </div>
-      % endif
-      <div id="inputs_div">
-        <hr>
-        colouring orientation<br>
-        <select id="input_color_style">
-          <option value="both">both</option>
-          <option value="vertical">vertical</option>
-          <option value="horizontal">horizontal</option>
-          <option value="none">none</option>
-        </select><br>
-      </div>
     </div>
-    
+    <hr>
+    <div class="my-row">
+        <div class="row row-header">
+            <div class="col-sm-1 lab">Horizontal axis</div>
+            <div class="col-sm-2">
+                <select name="xAxis" id="x_axis" class="form-control" required="">
+    					  % for val in vars:
+      						% if val == vars[0]:
+      						  <option value="${val}" selected>${val}</option>
+      						% else:
+      						  <option value="${val}">${val}</option>
+      						% endif
+    					  % endfor
+                </select>
+            </div>
+            <div class="col-sm-1 lab">Vertical axis</div>
+            <div class="col-sm-2">
+                <select name="yAxis" id="y_axis" class="form-control" required="">
+    					  % for val in vars:
+      						% if len(vars) > 1 and val == vars[1]:
+      						  <option value="${val}" selected>${val}</option>
+      						% else:
+      						  <option value="${val}">${val}</option>
+      						% endif
+    					  % endfor
+                </select>
+            </div>
+            <div class="col-sm-1 lab">Colouring orientation</div>
+            <div class="col-sm-2">
+              <select class="form-control" required="" id="input_color_style">
+                <option value="both">both</option>
+                <option value="vertical">vertical</option>
+                <option value="horizontal">horizontal</option>
+                <option value="none">none</option>
+              </select>
+            </div>
+        </div>
+        <hr>
+        <div class="row nohide">
+            <div class="col-sm-2">
+                <div style="text-align: right;">
+                    <div><button class="btn btn-default" id="resetZoomBtn_VF">Unzoom</button></div>
+                    <div><button class="btn btn-default" id="resetReachBtn_VF">Deselect</button> 
+                         <button class="btn btn-default" id="elongateReachBtn_VF">Elongate</button></div>
+                </div>
+                <pre id="infoPanel_VF"></pre>
+                % if len(vars) > 2:
+                  % for val in vars:
+                    <% 
+                    min_val  = min(map(float,thrs[val]))
+                    max_val  = max(map(float,thrs[val]))
+                    step_val = abs(max_val-min_val)*0.01
+                    %>
+                    % if val == vars[0] or val == vars[1]:
+                      <div class="form-group" id="slider_${val}_wrapper_VF" hidden>
+                    % else:
+                      <div class="form-group" id="slider_${val}_wrapper_VF">
+                    % endif
+          							<label class="control-label" for="slider_${val}_VF" id="text_${val}_VF">Value of ${val}</label>
+          							<input class="js-range-slider" id="slider_${val}_VF" data-min=${min_val} data-max=${max_val} data-from=${min_val} data-step=${step_val} 
+							            min=${min_val} max=${max_val} value=${min_val} step=${step_val} 
+          							  data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
+          						</div>
+                  % endfor
+                % endif
+                <div id="inputs_div">
+                    <div class="form-group">
+                        <label class="control-label" for="input_gridSize_VF">Arrows count</label>
+                        <input class="js-range-slider" id="input_gridSize_VF" min="10" max="100" value="25" step="1" 
+                          data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label" for="input_dt_VF">Derivative scale</label>
+                        <input class="js-range-slider" id="input_dt_VF" min="0.01" max="1" value="1" step="0.01" 
+                          data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label" for="input_color_thr_VF">Colouring threshold</label>
+                        <input class="js-range-slider" id="input_color_thr_VF" min="0" max="0.1" value="0.05" step="0.01" 
+                          data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-4 visual" id="plot_vf"></div>
+            <div class="col-sm-4 visual" id="plot_tss"></div>
+            <div class="col-sm-2">
+                <div>
+                    <div><button class="btn btn-default" id="resetZoomBtn">Unzoom</button></div>
+                    <div><button class="btn btn-default" id="resetReachBtn">Deselect</button></div>
+                </div>
+                <pre id="infoPanel"></pre>
+                % if len(vars) > 2:
+                  % for val in vars:
+                    <% 
+                    print(val)
+                    min_val  = min(map(float,thrs[val]))
+                    max_val  = max(map(float,thrs[val]))
+                    step_val = abs(max_val-min_val)*0.01
+                    %>
+                    % if val == vars[0] or val == vars[1]:
+                      <div class="form-group" id="slider_${val}_wrapper" hidden>
+                    % else:
+                      <div class="form-group" id="slider_${val}_wrapper">
+                    % endif
+          							<label class="control-label" for="slider_${val}" id="text_${val}">Value of ${val}</label>
+          							<input class="js-range-slider" id="slider_${val}" data-min=${min_val} data-max=${max_val} data-from=${min_val} data-step=${step_val} 
+							            min=${min_val} max=${max_val} value=${min_val} step=${step_val} 
+          							  data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
+          						</div>
+                  % endfor
+                % endif
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="static/js/vendor/jquery-1.12.3.min.js"></script>
+    <script type="text/javascript" src="static/js/ion-rangeSlider/ion.rangeSlider.min.js"></script>
     <script type="text/javascript" charset="utf-8">
     
-var xDim = document.getElementById("x_axis").value,
+var width = d3.select("#plot_vf").property("offsetWidth"),
+    height = d3.select("#plot_vf").property("offsetWidth"),
+    xDim = document.getElementById("x_axis").value,
     yDim = document.getElementById("y_axis").value,
+    xDim_id = window.bio.vars.findIndex(x => x == xDim),
+    yDim_id = window.bio.vars.findIndex(x => x == yDim),
     thrs = window.bio.thrs,
     params = {},
     dt_VF = Number(d3.select("#input_dt_VF").property("value")),
     traj_dt_VF = 0.1,
-    color_style_VF = d3.select("#input_color_style_VF").property("value"),
     color_thr_VF = Number(d3.select("#input_color_thr_VF").property("value")),
     gridSize_VF = Number(d3.select("#input_gridSize_VF").property("value")),
     
     multiarr = [],
-    color_style = document.getElementById("input_color_style").value;
+    color_style = d3.select("#input_color_style").property("value");
 
 // initial values according to the sliders setting
 window.bio.params.map(x => params[x[0]] = x[1]);
-    
-// iteratively adds event listener for varaible sliders (according to index)
+
+// iteratively adds event listener for variable sliders (according to index)
 % if len(vars) > 2:
   % for val in vars:
       (function(i) {
-          d3.select("#text_"+i+"_VF").html(d3.select("#slider_"+i+"_VF").property("value"));
           d3.select("#slider_"+i+"_VF").on("input", function() {
-              d3.select("#text_"+i+"_VF").html(this.value);
               zoomed_VF();
           })
       })('${val}');
@@ -413,51 +393,52 @@ window.bio.params.map(x => params[x[0]] = x[1]);
 // iteratively adds event listener for parameter sliders (according to index)
 % if len(params) > 0:
   % for val in params:
-      (function(i) {
-          d3.select("#text_"+i[0]).html(d3.select("#slider_"+i[0]).property("value"));
-          d3.select("#slider_"+i[0]).on("input", function() {
-              d3.select("#text_"+i[0]).html(this.value);
-              // fill parameters with current values
-              params[i[0]] = Number(d3.select("#slider_"+i[0]).property("value")); // according to slider for parameters
-              zoomed_VF();
-              
-              compute_tss();
-              transform_tss();
-              draw();
-              zoomed();
-              if(reach_start !== null) handleMouseClick(null,reach_start);
-          })
-      })(${val});
+    (function(i) {
+/*        $('#slider_'+i[0]).ionRangeSlider({
+          onFinish: function (data) {
+            params[i[0]] = Number(data.from); // according to slider for parameters
+            zoomed_VF();
+            //initiate_VF();
+            //generateGrid_VF();
+            //draw_VF();
+            
+            compute_tss();
+            transform_tss();
+            draw();
+            zoomed();
+            if(reach_start !== null) handleMouseClick(null,reach_start);
+          }
+        }); */
+        d3.select("#slider_"+i[0]).on("input", function() {
+            // fill parameters with current values
+            params[i[0]] = Number(d3.select(this).property("value")); // according to slider for parameters
+            zoomed_VF();
+            
+            compute_tss();
+            transform_tss();
+            draw();
+            zoomed();
+            if(reach_start !== null) handleMouseClick(null,reach_start);
+        });
+    })(${val});
   % endfor
 % endif
 
 // sets text value for slider of arrows_count and adds event listener for change of slider
-d3.select("#text_gridSize_VF").html(d3.select("#input_gridSize_VF").property("value"));
 d3.select('#input_gridSize_VF').on("input", function() {
-  d3.select("#text_gridSize_VF").html(this.value);
   gridSize_VF = Number(this.value);
   zoomed_VF();
 });
 
 // sets text value for slider of derivative_scale and adds event listener for change of slider
-d3.select("#text_dt_VF").html(d3.select("#input_dt_VF").property("value"));
 d3.select('#input_dt_VF').on("input", function() {
-  d3.select("#text_dt_VF").html(this.value);
   dt_VF = Number(this.value);
   zoomed_VF();
 });
 
 // sets text value for slider of colouring_threshold and adds event listener for change of slider
-d3.select("#text_color_thr_VF").html(d3.select("#input_color_thr_VF").property("value"));
 d3.select('#input_color_thr_VF').on("input", function() {
-  d3.select("#text_color_thr_VF").html(this.value);
   color_thr_VF = Number(this.value);
-  zoomed_VF();
-});
-
-// adds event listener for change of colouring_orientation
-d3.select('#input_color_style_VF').on("input", function() {
-  color_style_VF = this.value;
   zoomed_VF();
 });
 
@@ -469,9 +450,11 @@ d3.select("#x_axis").on("change", function() {
     yDim = xDim;
   } else {
     d3.select("#slider_"+xDim+"_wrapper_VF").attr("hidden",null);
+    d3.select("#slider_"+xDim+"_wrapper").attr("hidden",null);
   }
   xDim = this.value;
   d3.select("#slider_"+this.value+"_wrapper_VF").attr("hidden","hidden");
+  d3.select("#slider_"+this.value+"_wrapper").attr("hidden","hidden");
   resettedZoom_VF();
   
   resettedZoom();
@@ -480,7 +463,7 @@ d3.select("#x_axis").on("change", function() {
   if(reach_start !== null) handleMouseClick(null,reach_start);
 });
 
-// event listener for change of selectected dimension for Y axis
+// event listener for change of selected dimension for Y axis
 d3.select("#y_axis").on("change", function() {
   var other = d3.select("#x_axis").property("value");
   if(this.value == other) {
@@ -488,9 +471,11 @@ d3.select("#y_axis").on("change", function() {
     xDim = yDim;
   } else {
     d3.select("#slider_"+yDim+"_wrapper_VF").attr("hidden",null);
+    d3.select("#slider_"+yDim+"_wrapper").attr("hidden",null);
   }
   yDim = this.value;
   d3.select("#slider_"+this.value+"_wrapper_VF").attr("hidden","hidden");
+  d3.select("#slider_"+this.value+"_wrapper").attr("hidden","hidden");
   resettedZoom_VF();
   
   resettedZoom();
@@ -498,6 +483,25 @@ d3.select("#y_axis").on("change", function() {
   draw();
   if(reach_start !== null) handleMouseClick(null,reach_start);
 });
+
+// event listener for width change of plots (they should be of same size)
+d3.select(window).on("resize", function() {
+  var newWidth = d3.select("#plot_vf").property("offsetWidth")
+  if(newWidth != width) {
+    width = newWidth
+    height = newWidth
+    d3.selectAll("svg").remove()
+    initiate_TSS()
+    compute_tss()
+    transform_tss()
+    draw()
+    fill_info_panel_outside()
+    
+    initiate_VF()
+    generateGrid_VF()
+    draw_VF()
+  }
+})
 
 // event listeners for buttons
 d3.select('#resetReachBtn_VF')
@@ -510,14 +514,11 @@ d3.select('#resetZoomBtn_VF')
     .on("click", resettedZoom_VF);
 
 
-// iteratively adds event listener for varaible sliders (according to index)
+// iteratively adds event listener for variable sliders (according to index)
 % if len(vars) > 2:
   % for val in vars:
       (function(i) {
-          d3.select("#text_"+i).html(d3.select("#slider_"+i).property("value"));
           d3.select("#slider_"+i).on("input", function() {
-              d3.select("#text_"+i).html(this.value);
-              
               transform_tss();
               draw();
               zoomed();
@@ -530,6 +531,7 @@ d3.select('#resetZoomBtn_VF')
 // adds event listener for change of colouring_orientation
 d3.select('#input_color_style').on("input", function() {
   color_style = this.value;
+  zoomed_VF();
   transform_tss();
   draw();
   zoomed();
@@ -545,10 +547,9 @@ d3.select('#resetZoomBtn')
 
 //###################################################  
 
-var width = 550,
-    height = 550,
-    margin = { top: 10, right: 10, bottom: 50, left: 50 },
+var margin = { top: 10, right: 10, bottom: 50, left: 50 },
     arrowlen = 3,
+    bgColor = d3.select("body").style("background-color"),
     noColor = "transparent",
     reachColor_TS = "rgba(65, 105, 225, 0.6)", // "royalblue with opacity"
     reachColor_VF = "royalblue",
@@ -573,137 +574,189 @@ var width = 550,
     transdata = [],
     trans = {},
     trans_dir = {},
-    zoomObject = d3.zoomIdentity;
-
-// d3 objects definitions
-var xScale_VF = d3.scaleLinear()
-              .domain([d3.min(thrs[xDim],parseFloat),
-                       d3.max(thrs[xDim],parseFloat)])
-              .range([margin.left, width - margin.right]);
-
-var yScale_VF = d3.scaleLinear()
-              .domain([d3.min(thrs[yDim],parseFloat),
-                       d3.max(thrs[yDim],parseFloat)])
-              .range([height - margin.bottom, margin.top]);
-
-
-var brushX_VF = d3.brushX()
-    .extent([[margin.left, 0], [width-margin.right, margin.bottom]])
-    .on("end", brushedX_VF),
+    zoomObject = d3.zoomIdentity
     
-    brushY_VF = d3.brushY()
-    .extent([[-margin.left, margin.top], [0, height-margin.bottom]])
-    .on("end", brushedY_VF);
+var infoPanel_lines = [
+  "Reach from: none",
+  "State id:   none",
+  % for id,v in enumerate(vars):
+    '${vars[id]}: '+(${id} == xDim_id || ${id} == yDim_id ? 
+                        '['+(${min([float(i) for i in thrs[v]])}).toFixed(3)+', '+(${max([float(i) for i in thrs[v]])}).toFixed(3)+']' : 
+                        '['+(d3.max(${[float(i) for i in thrs[v]]}.filter(k => k <= Number(d3.select("#slider_${vars[id]}").property("value"))))).toFixed(3)+', '
+                           +(d3.min(${[float(i) for i in thrs[v]]}.filter(k => k > Number(d3.select("#slider_${vars[id]}").property("value"))))).toFixed(3)+']'),
+  % endfor
+],
+    infoPanel_VF_lines = [
+  "Route start: none",
+  "Route end:   none",
+  % for id,v in enumerate(vars):
+    ' ${vars[id]}:   '+(${id} == xDim_id || ${id} == yDim_id ? 
+                        '['+(${min([float(i) for i in thrs[v]])}).toFixed(3)+', '+(${max([float(i) for i in thrs[v]])}).toFixed(3)+']' : 
+                        Number(d3.select("#slider_${vars[id]}_VF").property("value")).toFixed(3)),
+    'd[${vars[id]}]: unknown',
+  % endfor
+]
 
-var zoom_VF = d3.zoom()
-    .scaleExtent([0.1, 100000])   // TODO: better specification
-    //.translateExtent([[0,0],[width,height]])
-    .on("zoom", zoomed_VF);
+function initiate_VF() {
+  // d3 objects definitions
+  xScale_VF = d3.scaleLinear()
+                .domain([d3.min(thrs[xDim],parseFloat),
+                         d3.max(thrs[xDim],parseFloat)])
+                .range([margin.left, width - margin.right]);
+  
+  yScale_VF = d3.scaleLinear()
+                .domain([d3.min(thrs[yDim],parseFloat),
+                         d3.max(thrs[yDim],parseFloat)])
+                .range([height - margin.bottom, margin.top]);
+  
+  
+  brushX_VF = d3.brushX()
+      .extent([[margin.left, 0], [width-margin.right, margin.bottom]])
+      .on("end", brushedX_VF),
+      
+      brushY_VF = d3.brushY()
+      .extent([[-margin.left, margin.top], [0, height-margin.bottom]])
+      .on("end", brushedY_VF);
+  
+  zoom_VF = d3.zoom()
+      .scaleExtent([0.1, 100000])   // TODO: better specification
+      //.translateExtent([[0,0],[width,height]])
+      .on("zoom", zoomed_VF);
+            
+  svg_VF = d3.select("#plot_vf").append("svg")
+      .attr("width", width)
+      .attr("height", height);
+  
+  container_VF = svg_VF.append("g")
+      .attr("id","cont_VF")
+      .attr("pointer-events", "all")
+      //.attr("transform", "translate("+(margin.left)+","+(margin.top)+")")
+      .call(zoom_VF);
+      
+  // important box to cover svg content outside the axis-bounded window while zooming or moving 
+  svg_VF.append("rect")
+      .attr("x", 0)
+      .attr("y", height-margin.bottom)
+      .attr("width", width)
+      .attr("height", margin.bottom)
+      .attr("fill", bgColor)
+  svg_VF.append("rect")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", margin.left)
+      .attr("height", height)
+      .attr("fill", bgColor)
+  svg_VF.append("rect")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", width)
+      .attr("height", margin.top)
+      .attr("fill", bgColor)
+  svg_VF.append("rect")
+      .attr("x", width-margin.right)
+      .attr("y", 0)
+      .attr("width", margin.right)
+      .attr("height", height)
+      .attr("fill", bgColor)
           
-var svg_VF = d3.select("body").append("svg")
-    .attr("width", width)
-    .attr("height", height);
-
-var container_VF = svg_VF.append("g")
-    .attr("id","cont_VF")
-    //.attr("transform", "translate("+(margin.left)+","+(margin.top)+")")
-    .call(zoom_VF);
-        
-var defs_VF = svg_VF.append("svg:defs");
-defs_VF.append("svg:marker")
-		.attr("id", "neutralArrow")
-		.attr("viewBox", "0 "+(-0.5*arrowlen)+" "+arrowlen+" "+arrowlen)
-		.attr("refX", 0.5*arrowlen)
-		.attr("refY", 0)
-		.attr("markerWidth", arrowlen)
-		.attr("markerHeight", arrowlen)
-		.attr("orient","auto")
-    .append("svg:path")
-      .attr("fill", neutral_col)
-			.attr("d", "M0,"+(-0.5*arrowlen)+" L"+arrowlen+",0 L0,"+(0.5*arrowlen))
-			.attr("class","arrowHead");
-defs_VF.append("svg:marker")
-		.attr("id", "positiveArrow")
-		.attr("viewBox", "0 "+(-0.5*arrowlen)+" "+arrowlen+" "+arrowlen)
-		.attr("refX", 0.5*arrowlen)
-		.attr("refY", 0)
-		.attr("markerWidth", arrowlen)
-		.attr("markerHeight", arrowlen)
-		.attr("orient","auto")
-    .append("svg:path")
-      .attr("fill", positive_col)
-			.attr("d", "M0,"+(-0.5*arrowlen)+" L"+arrowlen+",0 L0,"+(0.5*arrowlen))
-			.attr("class","arrowHead");
-defs_VF.append("svg:marker")
-		.attr("id", "negativeArrow")
-		.attr("viewBox", "0 "+(-0.5*arrowlen)+" "+arrowlen+" "+arrowlen)
-		.attr("refX", 0.5*arrowlen)
-		.attr("refY", 0)
-		.attr("markerWidth", arrowlen)
-		.attr("markerHeight", arrowlen)
-		.attr("orient","auto")
-    .append("svg:path")
-      .attr("fill", negative_col)
-			.attr("d", "M0,"+(-0.5*arrowlen)+" L"+arrowlen+",0 L0,"+(0.5*arrowlen))
-			.attr("class","arrowHead");
-defs_VF.append("svg:marker")
-		.attr("id", "reachArrow")
-		.attr("viewBox", "0 "+(-0.5*arrowlen)+" "+arrowlen+" "+arrowlen)
-		.attr("refX", 0.5*arrowlen)
-		.attr("refY", 0)
-		.attr("markerWidth", arrowlen)
-		.attr("markerHeight", arrowlen)
-		.attr("orient","auto")
-    .append("svg:path")
-      .attr("fill", reachColor_VF)
-			.attr("d", "M0,"+(-0.5*arrowlen)+" L"+arrowlen+",0 L0,"+(0.5*arrowlen))
-			.attr("class","reachArrowHead");
-
-var xLabel_VF = svg_VF.append("text")
-    .attr("id", "xLabel_VF")
-    .attr("class", "label")
-    .attr("x", width*0.5)
-    .attr("y", height-10)
-    .attr("stroke", "black")
-    .text(function() { return xDim; });
-var ylabel_VF = svg_VF.append("text")
-    .attr("id", "ylabel_VF")
-    .attr("class", "label")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -width*0.5)
-    .attr("y", 15)
-    .attr("stroke", "black")
-    .text(function() { return yDim; });
-
-var bottomPanel_VF = svg_VF.append("g")
-    .attr("id", "bPanel_VF")
-    .attr("class", "panel")
-    .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")");
-    
-var xAxis_VF = d3.axisBottom(xScale_VF);
-var gX_VF = bottomPanel_VF.append("g")
-    .attr("id", "xAxis_VF")
-    .attr("class", "axis")
-    .call(xAxis_VF); // Create an axis component with d3.axisBottom
-var gBX_VF = bottomPanel_VF.append("g")
-    .attr("id", "xBrush_VF")
-    .attr("class", "brush")
-    .call(brushX_VF);
-    
-var leftPanel_VF = svg_VF.append("g")
-    .attr("id", "lPanel_VF")
-    .attr("class", "panel")
-    .attr("transform", "translate("+margin.left+","+0+")");
-
-var yAxis_VF = d3.axisLeft(yScale_VF);
-var gY_VF = leftPanel_VF.append("g")
-    .attr("id", "yAxis_VF")
-    .attr("class", "axis")
-    .call(yAxis_VF); // Create an axis component with d3.axisLeft
-var gBY_VF = leftPanel_VF.append("g")
-    .attr("id", "yBrush_VF")
-    .attr("class", "brush")
-    .call(brushY_VF);
+  defs_VF = svg_VF.append("svg:defs");
+  defs_VF.append("svg:marker")
+  		.attr("id", "neutralArrow")
+  		.attr("viewBox", "0 "+(-0.5*arrowlen)+" "+arrowlen+" "+arrowlen)
+  		.attr("refX", 0.5*arrowlen)
+  		.attr("refY", 0)
+  		.attr("markerWidth", arrowlen)
+  		.attr("markerHeight", arrowlen)
+  		.attr("orient","auto")
+      .append("svg:path")
+        .attr("fill", neutral_col)
+  			.attr("d", "M0,"+(-0.5*arrowlen)+" L"+arrowlen+",0 L0,"+(0.5*arrowlen))
+  			.attr("class","arrowHead");
+  defs_VF.append("svg:marker")
+  		.attr("id", "positiveArrow")
+  		.attr("viewBox", "0 "+(-0.5*arrowlen)+" "+arrowlen+" "+arrowlen)
+  		.attr("refX", 0.5*arrowlen)
+  		.attr("refY", 0)
+  		.attr("markerWidth", arrowlen)
+  		.attr("markerHeight", arrowlen)
+  		.attr("orient","auto")
+      .append("svg:path")
+        .attr("fill", positive_col)
+  			.attr("d", "M0,"+(-0.5*arrowlen)+" L"+arrowlen+",0 L0,"+(0.5*arrowlen))
+  			.attr("class","arrowHead");
+  defs_VF.append("svg:marker")
+  		.attr("id", "negativeArrow")
+  		.attr("viewBox", "0 "+(-0.5*arrowlen)+" "+arrowlen+" "+arrowlen)
+  		.attr("refX", 0.5*arrowlen)
+  		.attr("refY", 0)
+  		.attr("markerWidth", arrowlen)
+  		.attr("markerHeight", arrowlen)
+  		.attr("orient","auto")
+      .append("svg:path")
+        .attr("fill", negative_col)
+  			.attr("d", "M0,"+(-0.5*arrowlen)+" L"+arrowlen+",0 L0,"+(0.5*arrowlen))
+  			.attr("class","arrowHead");
+  defs_VF.append("svg:marker")
+  		.attr("id", "reachArrow")
+  		.attr("viewBox", "0 "+(-0.5*arrowlen)+" "+arrowlen+" "+arrowlen)
+  		.attr("refX", 0.5*arrowlen)
+  		.attr("refY", 0)
+  		.attr("markerWidth", arrowlen)
+  		.attr("markerHeight", arrowlen)
+  		.attr("orient","auto")
+      .append("svg:path")
+        .attr("fill", reachColor_VF)
+  			.attr("d", "M0,"+(-0.5*arrowlen)+" L"+arrowlen+",0 L0,"+(0.5*arrowlen))
+  			.attr("class","reachArrowHead");
+  
+  xLabel_VF = svg_VF.append("text")
+      .attr("id", "xLabel_VF")
+      .attr("class", "label")
+      .attr("x", width*0.5)
+      .attr("y", height-10)
+      .attr("stroke", "black")
+      .text(function() { return xDim; });
+  ylabel_VF = svg_VF.append("text")
+      .attr("id", "ylabel_VF")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("x", -width*0.5)
+      .attr("y", 15)
+      .attr("stroke", "black")
+      .text(function() { return yDim; });
+  
+  bottomPanel_VF = svg_VF.append("g")
+      .attr("id", "bPanel_VF")
+      .attr("class", "panel")
+      .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")");
+      
+  xAxis_VF = d3.axisBottom(xScale_VF);
+  gX_VF = bottomPanel_VF.append("g")
+      .attr("id", "xAxis_VF")
+      .attr("class", "axis")
+      .call(xAxis_VF); // Create an axis component with d3.axisBottom
+  gBX_VF = bottomPanel_VF.append("g")
+      .attr("id", "xBrush_VF")
+      .attr("class", "brush")
+      .call(brushX_VF);
+      
+  leftPanel_VF = svg_VF.append("g")
+      .attr("id", "lPanel_VF")
+      .attr("class", "panel")
+      .attr("transform", "translate("+margin.left+","+0+")");
+  
+  yAxis_VF = d3.axisLeft(yScale_VF);
+  gY_VF = leftPanel_VF.append("g")
+      .attr("id", "yAxis_VF")
+      .attr("class", "axis")
+      .call(yAxis_VF); // Create an axis component with d3.axisLeft
+  gBY_VF = leftPanel_VF.append("g")
+      .attr("id", "yBrush_VF")
+      .attr("class", "brush")
+      .call(brushY_VF);
+      
+  d3.select("#infoPanel_VF").property("innerHTML", infoPanel_VF_lines.join("\n"))
+}
     
     
 // trans_dir example:
@@ -722,90 +775,124 @@ var gBY_VF = leftPanel_VF.append("g")
 //   3:[3]
 // };
 
-var xScale = d3.scaleLinear()
-  .domain([d3.min(thrs[xDim],parseFloat),
-           d3.max(thrs[xDim],parseFloat)])
-  .range([margin.left, width - margin.right]);
+function initiate_TSS() {
+  xScale = d3.scaleLinear()
+    .domain([d3.min(thrs[xDim],parseFloat),
+             d3.max(thrs[xDim],parseFloat)])
+    .range([margin.left, width - margin.right]);
+  
+  yScale = d3.scaleLinear()
+    .domain([d3.min(thrs[yDim],parseFloat),
+             d3.max(thrs[yDim],parseFloat)])
+    .range([height - margin.bottom, margin.top]);
+  
+  brushX = d3.brushX()
+      .extent([[margin.left, 0], [width-margin.right, margin.bottom]])
+      .on("end", brushedX),
+      
+      brushY = d3.brushY()
+      .extent([[-margin.left, margin.top], [0, height-margin.bottom]])
+      .on("end", brushedY);
+  
+  zoom = d3.zoom()
+      .scaleExtent([1, 100000])
+      .translateExtent([[0,0],[width,height]])
+      .on("zoom", zoomed);
+      
+  svg = d3.select("#plot_tss").append("svg")
+      .attr("width", width)
+      .attr("height", height);
+  
+  container = svg.append("g")
+      .attr("id","cont")
+      .attr("pointer-events", "all")
+      .call(zoom);
+      
+  // important box to cover svg content outside the axis-bounded window while zooming or moving 
+  svg.append("rect")
+      .attr("x", 0)
+      .attr("y", height-margin.bottom)
+      .attr("width", width)
+      .attr("height", margin.bottom)
+      .attr("fill", bgColor)
+  svg.append("rect")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", margin.left)
+      .attr("height", height)
+      .attr("fill", bgColor)
+  svg.append("rect")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", width)
+      .attr("height", margin.top)
+      .attr("fill", bgColor)
+  svg.append("rect")
+      .attr("x", width-margin.right)
+      .attr("y", 0)
+      .attr("width", margin.right)
+      .attr("height", height)
+      .attr("fill", bgColor)
+  
+  xLabel = svg.append("text")
+      .attr("id", "xlabel")
+      .attr("class", "label")
+      .attr("x", width*0.5)
+      .attr("y", height-10)
+      .attr("stroke", "black")
+      .text(function() { return xDim; });
+  yLabel = svg.append("text")
+      .attr("id", "ylabel")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("x", -width*0.5)
+      .attr("y", 15)
+      .attr("stroke", "black")
+      .text(function() { return yDim; });
+  
+  bottomPanel = svg.append("g")
+      .attr("id", "bPanel")
+      .attr("class", "panel")
+      .style("background-color","red")
+      .attr("transform", "translate("+0+","+(height-margin.bottom)+")");
+      
+  xAxis = d3.axisBottom(xScale);
+  gX = bottomPanel.append("g")
+      .attr("id", "xAxis")
+      .attr("class", "axis")
+      .call(xAxis); // Create an axis component with d3.axisBottom
+  gBX = bottomPanel.append("g")
+      .attr("id", "xBrush")
+      .attr("class", "brush")
+      .call(brushX);
+      
+  leftPanel = svg.append("g")
+      .attr("id", "lPanel")
+      .attr("class", "panel")
+      .attr("transform", "translate("+margin.left+","+0+")");
+  
+  yAxis = d3.axisLeft(yScale);
+  gY = leftPanel.append("g")
+      .attr("id", "yAxis")
+      .attr("class", "axis")
+      .call(yAxis); // Create an axis component with d3.axisLeft
+  gBY = leftPanel.append("g")
+      .attr("id", "xBrush")
+      .attr("class", "brush")
+      .call(brushY);
 
-var yScale = d3.scaleLinear()
-  .domain([d3.min(thrs[yDim],parseFloat),
-           d3.max(thrs[yDim],parseFloat)])
-  .range([height - margin.bottom, margin.top]);
+  d3.select("#infoPanel").property("innerHTML", infoPanel_lines.join("\n"))
+}
 
-var brushX = d3.brushX()
-    .extent([[margin.left, 0], [width-margin.right, margin.bottom]])
-    .on("end", brushedX),
-    
-    brushY = d3.brushY()
-    .extent([[-margin.left, margin.top], [0, height-margin.bottom]])
-    .on("end", brushedY);
+initiate_TSS()
+compute_tss()
+transform_tss()
+draw()
+fill_info_panel_outside()
 
-var zoom = d3.zoom()
-          //.scaleExtent([1, Infinity])
-          //.translateExtent([[0,0],[width,height]])
-          .on("zoom", zoomed);
-var svg = d3.select("body").append("svg")
-    .attr("width", width)
-    .attr("height", height);
-
-var container = svg.append("g")
-        .attr("id","cont")
-        //.attr("transform", "translate("+(margin.left)+","+(margin.top)+")")
-        .call(zoom);
-
-var xLabel = svg.append("text")
-    .attr("id", "xlabel")
-    .attr("class", "label")
-    .attr("x", width*0.5)
-    .attr("y", height-10)
-    .attr("stroke", "black")
-    .text(function() { return xDim; });
-var yLabel = svg.append("text")
-    .attr("id", "ylabel")
-    .attr("class", "label")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -width*0.5)
-    .attr("y", 15)
-    .attr("stroke", "black")
-    .text(function() { return yDim; });
-
-var bottomPanel = svg.append("g")
-    .attr("id", "bPanel")
-    .attr("class", "panel")
-    .attr("transform", "translate("+(0)+","+(height-margin.bottom)+")");
-    
-var xAxis = d3.axisBottom(xScale);
-var gX = bottomPanel.append("g")
-    .attr("id", "xAxis")
-    .attr("class", "axis")
-    .call(xAxis); // Create an axis component with d3.axisBottom
-var gBX = bottomPanel.append("g")
-    .attr("id", "xBrush")
-    .attr("class", "brush")
-    .call(brushX);
-    
-var leftPanel = svg.append("g")
-    .attr("id", "lPanel")
-    .attr("class", "panel")
-    .attr("transform", "translate("+margin.left+","+0+")");
-
-var yAxis = d3.axisLeft(yScale);
-var gY = leftPanel.append("g")
-    .attr("id", "yAxis")
-    .attr("class", "axis")
-    .call(yAxis); // Create an axis component with d3.axisLeft
-var gBY = leftPanel.append("g")
-    .attr("id", "xBrush")
-    .attr("class", "brush")
-    .call(brushY);
-
-compute_tss();
-transform_tss();
-draw();
-fill_info_panel_outside();
-
-generateGrid_VF();
-draw_VF();
+initiate_VF()
+generateGrid_VF()
+draw_VF()
     
 // ################# definitions of functions #################
     
@@ -838,7 +925,7 @@ function generateGrid_VF() {
       for (const [key, eq] of Object.entries(window.bio.eqs)) {
         diffs[key] = Number(eq(vars, params));
       }
-      var direction = (color_style_VF == "both" ? diffs[xDim]+diffs[yDim] : (color_style_VF == "vertical" ? diffs[yDim] : (color_style_VF == "horizontal" ? diffs[xDim] : 0)));
+      var direction = (color_style == "both" ? diffs[xDim]+diffs[yDim] : (color_style == "vertical" ? diffs[yDim] : (color_style == "horizontal" ? diffs[xDim] : 0)));
       vectors_VF.push({
         id: i*xp.length+j,
         x0: zoomObject_VF.rescaleX(xScale_VF)(xp[j]),
@@ -853,10 +940,10 @@ function generateGrid_VF() {
 }
    
 function update_axes_VF() {
-  // Update axes labels according to selected diemnsions
+  // Update axes labels according to selected dimensions
   d3.select('#xLabel_VF').text(xDim);
   d3.select('#ylabel_VF').text(yDim);
-  // Update scales according to selected diemnsions
+  // Update scales according to selected dimensions
   xScale_VF.domain([d3.min(thrs[xDim],parseFloat),
                  d3.max(thrs[xDim],parseFloat)])
 
@@ -870,13 +957,17 @@ function resettedReach_VF() {
   reach_start_VF = null; 
   reach_end_VF = null; 
   trajectory_VF_length = 1000; 
-  d3.select("#trajectory_VF").remove();
+  d3.select("#trajectory_VF").remove()
+  
+  infoPanel_VF_lines[0] = "Route start: none"
+  infoPanel_VF_lines[1] = "Route end:   none"
+  d3.select("#infoPanel_VF").property("innerHTML", infoPanel_VF_lines.join("\n"))
 }
 function resettedZoom_VF() {
   update_axes_VF()
   container_VF.transition()
       .duration(500)
-      .call(zoom_VF.transform, d3.zoomIdentity);
+      .call(zoom_VF.transform, d3.zoomIdentity)
 }
 function zoomed_VF() {
   if(d3.event.transform) zoomObject_VF = d3.event.transform;
@@ -885,11 +976,24 @@ function zoomed_VF() {
   draw_VF();
   if(reach_start_VF !== null) reach_VF(null);
   
-  gX_VF.call(xAxis_VF.scale(zoomObject_VF.rescaleX(xScale_VF)));
-  gY_VF.call(yAxis_VF.scale(zoomObject_VF.rescaleY(yScale_VF)));
+  gX_VF.call(xAxis_VF.scale(zoomObject_VF.rescaleX(xScale_VF)))
+  gY_VF.call(yAxis_VF.scale(zoomObject_VF.rescaleY(yScale_VF)))
   // reset brushes
-  gBX_VF.call(brushX_VF.move, null);
-  gBY_VF.call(brushY_VF.move, null);
+  gBX_VF.call(brushX_VF.move, null)
+  gBY_VF.call(brushY_VF.move, null)
+  
+  for(var v = 0; v < window.bio.vars.length; v++) {
+    var key = window.bio.vars[v]
+    if(key == xDim)
+      infoPanel_VF_lines[2*v+2] = [" ",key,":   [",zoomObject_VF.rescaleX(xScale_VF).domain()[0].toFixed(3),
+                                   ", ",zoomObject_VF.rescaleX(xScale_VF).domain()[1].toFixed(3),"]"].join("")
+    else if(key == yDim)
+      infoPanel_VF_lines[2*v+2] = [" ",key,":   [",zoomObject_VF.rescaleY(yScale_VF).domain()[0].toFixed(3),
+                                   ", ",zoomObject_VF.rescaleY(yScale_VF).domain()[1].toFixed(3),"]"].join("")
+    else
+      infoPanel_VF_lines[2*v+2] = [" ",key,":   ",Number(d3.select("#slider_"+key+"_VF").property("value")).toFixed(3)].join("")
+  }
+  d3.select("#infoPanel_VF").property("innerHTML", infoPanel_VF_lines.join("\n"))
 }
 function brushedX_VF() {
   if (!d3.event.sourceEvent) return; // Only transition after input.
@@ -921,12 +1025,11 @@ function brushedY_VF() {
   zoomed_VF()
 }
 function handleMouseOver_VF(d, i) {
-  var div = document.getElementById("infoPanel_VF");
   var mouse = d3.mouse(this),
-      vars = {};
+      vars = {}
   // fill variables with values of mouse position and sliders
   for(var v = 0; v < window.bio.vars.length; v++) {
-    var key = window.bio.vars[v];
+    var key = window.bio.vars[v]
     if(key == xDim)       vars[key] = zoomObject_VF.rescaleX(xScale_VF).invert(mouse[0]);
     else if(key == yDim)  vars[key] = zoomObject_VF.rescaleY(yScale_VF).invert(mouse[1]);
     else                  vars[key] = Number(d3.select("#slider_"+key+"_VF").property("value"));
@@ -937,24 +1040,28 @@ function handleMouseOver_VF(d, i) {
     diffs[key] = Number(eq(vars, params));
   }
   
-  var content = "Route start: "+(reach_start_VF !== null ? ""+parsing_to_string(reach_start_VF)+"" : "none");
-  content +=  "\nRoute end:   "+(reach_end_VF !== null ? ""+parsing_to_string(reach_end_VF)+"" : "none");
+  //var content = "Route start: "+(reach_start_VF !== null ? ""+parsing_to_string(reach_start_VF)+"" : "none");
+  //content +=  "\nRoute end:   "+(reach_end_VF !== null ? ""+parsing_to_string(reach_end_VF)+"" : "none");
   for(var v = 0; v < window.bio.vars.length; v++) {
     var key = window.bio.vars[v];
-    content += "\n"+key+": "+(vars[key].toFixed(3))+"\td["+key+"]: "+(diffs[key].toFixed(3));
+    infoPanel_VF_lines[2*v+2] = [" ",key,":   ",vars[key].toFixed(3)].join("")
+    infoPanel_VF_lines[2*v+3] = ["d[",key,"]: ",diffs[key].toFixed(3)].join("")
   }
-  div.value = content;
+  d3.select("#infoPanel_VF").property("innerHTML", infoPanel_VF_lines.join("\n"))
 }
 function handleMouseOut_VF(d, i) {
-  var div = document.getElementById("infoPanel_VF");
-  var content = "Route start: "+(reach_start_VF !== null ? ""+parsing_to_string(reach_start_VF)+"" : "none");
-  content +=  "\nRoute end:   "+(reach_end_VF !== null ? ""+parsing_to_string(reach_end_VF)+"" : "none");
   for(var v = 0; v < window.bio.vars.length; v++) {
-    var key = window.bio.vars[v];
-    var value = key == xDim ? zoomObject_VF.rescaleX(xScale_VF).domain() : (key == yDim ? zoomObject_VF.rescaleY(yScale_VF).domain() : Number(d3.select("#slider_"+key+"_VF").property("value")) );
-    content += "\n"+key+": "+(key == xDim || key == yDim ? ("["+(+value[0].toFixed(3))+", "+(+value[1].toFixed(3))+"]") : (+value.toFixed(3)));
+    var key = window.bio.vars[v]
+    if(key == xDim)
+      infoPanel_VF_lines[2*v+2] = [" ",key,":   [",zoomObject_VF.rescaleX(xScale_VF).domain()[0].toFixed(3),
+                                   ", ",zoomObject_VF.rescaleX(xScale_VF).domain()[1].toFixed(3),"]"].join("")
+    else if(key == yDim)
+      infoPanel_VF_lines[2*v+2] = [" ",key,":   [",zoomObject_VF.rescaleY(yScale_VF).domain()[0].toFixed(3),
+                                   ", ",zoomObject_VF.rescaleY(yScale_VF).domain()[1].toFixed(3),"]"].join("")
+      
+    infoPanel_VF_lines[2*v+3] = ["d[",key,"]: unknown"].join("")
   }
-  div.value = content;
+  d3.select("#infoPanel_VF").property("innerHTML", infoPanel_VF_lines.join("\n"))
 }
 function elongate_VF() {
   d3.select("#trajectory_VF").remove();
@@ -986,7 +1093,10 @@ function elongate_VF() {
       .attr("stroke-width", selfloopWidth_VF)
       .attr("marker-end", "url(#reachArrow)")
       .attr("d", trajectory_VF);
-  d3.select("#zoomField_VF").moveUp();
+  d3.select("#zoomField_VF").moveUp()
+  
+  infoPanel_VF_lines[1] = "Route end:   "+parsing_to_string(reach_end_VF)
+  d3.select("#infoPanel_VF").property("innerHTML", infoPanel_VF_lines.join("\n"))
 }
 // counts trajectory in VF from selected origin point
 function reach_VF(event) {
@@ -1033,7 +1143,11 @@ function reach_VF(event) {
       .attr("stroke-width", selfloopWidth_VF)
       .attr("marker-end", "url(#reachArrow)")
       .attr("d", trajectory_VF);
-  d3.select("#zoomField_VF").moveUp();
+  d3.select("#zoomField_VF").moveUp()
+  
+  infoPanel_VF_lines[0] = "Route start: "+parsing_to_string(reach_start_VF)
+  infoPanel_VF_lines[1] = "Route end:   "+parsing_to_string(reach_end_VF)
+  d3.select("#infoPanel_VF").property("innerHTML", infoPanel_VF_lines.join("\n"))
 }
 // function for in-field mouse-click event (counts trajectory in VF)
 function handleMouseClick_VF(d, i) {
@@ -1309,6 +1423,7 @@ function update_axes() {
 function resettedReach() {
   reach_start=null; 
   d3.selectAll(".states").attr("fill", noColor);
+  infoPanel_lines[0] = "Reach from: none"
   fill_info_panel_outside();
 }
 function resettedZoom() {
@@ -1337,11 +1452,24 @@ function zoomed() {
     .attr("width", d => x(d.x1)-x(d.x))
     .attr("height", d => y(d.y1)-y(d.y))
   
-  gX.call(xAxis.scale(x));
-  gY.call(yAxis.scale(y));
+  gX.call(xAxis.scale(x))
+  gY.call(yAxis.scale(y))
   // reset brushes
-  gBX.call(brushX.move, null);
-  gBY.call(brushY.move, null);
+  gBX.call(brushX.move, null)
+  gBY.call(brushY.move, null)
+  
+  for(var v = 0; v < window.bio.vars.length; v++) {
+    var key = window.bio.vars[v]
+    if(key == xDim)
+      infoPanel_lines[v+2] = [key,": [",zoomObject.rescaleX(xScale).domain()[0].toFixed(3),
+                                   ", ",zoomObject.rescaleX(xScale).domain()[1].toFixed(3),"]"].join("")
+    else if(key == yDim)
+      infoPanel_lines[v+2] = [key,": [",zoomObject.rescaleY(yScale).domain()[0].toFixed(3),
+                                   ", ",zoomObject.rescaleY(yScale).domain()[1].toFixed(3),"]"].join("")
+    else
+      infoPanel_lines[v+2] = [key,": [",d3.min(multiarr[v].map(Number)).toFixed(3),", ",d3.max(multiarr[v].map(Number)).toFixed(3),"]"].join("")
+  }
+  d3.select("#infoPanel").property("innerHTML", infoPanel_lines.join("\n"))
 }
 function brushedX() {
   if (!d3.event.sourceEvent) return; // Only transition after input.
@@ -1373,22 +1501,16 @@ function brushedY() {
   zoomed();
 }
 function fill_info_panel(d) {
-  var div = document.getElementById("infoPanel");
-  var content =  "reach from: "+(reach_start == null ? "none" : reach_start);
-      content += "\nstate: "+d.id.slice(1)+"";
+  infoPanel_lines[1] = "State id:   "+d.id.slice(1)
   for(var v = 0; v < window.bio.vars.length; v++) {
-    var key = window.bio.vars[v];
+    var key = window.bio.vars[v]
+    // (+some_number) is a trick how to get rid of trailling zeroes
     if(xDim == key)
-      // (+some_number) is a trick how to get rid of trailling zeroes
-      content += "\n"+xDim+": ["+(+parseFloat(d.x).toFixed(3))+", "\
-                                +(+parseFloat(d.x1).toFixed(3))+"]";
+      infoPanel_lines[v+2] = key+": ["+(parseFloat(d.x).toFixed(3))+", "+(parseFloat(d.x1).toFixed(3))+"]"
     else if(yDim == key)
-      content += "\n"+yDim+": ["+(+parseFloat(d.y1).toFixed(3))+", "\
-                                +(+parseFloat(d.y).toFixed(3))+"]";
-    else
-      content += "\n"+key+": ["+d3.min(multiarr[v].map(Number))+", "+d3.max(multiarr[v].map(Number))+"]";
+      infoPanel_lines[v+2] = key+": ["+(parseFloat(d.y1).toFixed(3))+", "+(parseFloat(d.y).toFixed(3))+"]"
   }
-  div.value = content;
+  d3.select("#infoPanel").property("innerHTML", infoPanel_lines.join("\n"))
 }
 function handleMouseOver(d, i) {
   d3.select(this).attr("stroke-width", hoverStrokeWidth);
@@ -1397,22 +1519,18 @@ function handleMouseOver(d, i) {
   fill_info_panel(d);
 }
 function fill_info_panel_outside() {
-  var div = document.getElementById("infoPanel");
-  var content =  "reach from: "+(reach_start == null ? "none" : reach_start);
-      content += "\nstate: none";
+  infoPanel_lines[1] = "State id:   none"
   for(var v = 0; v < window.bio.vars.length; v++) {
-    var key = window.bio.vars[v];
-    if(xDim == key)
-      // (+some_number) is a trick how to get rid of trailling zeroes
-      content += "\n"+xDim+": ["+(+xScale.domain()[0].toFixed(3))+", "\
-                                +(+xScale.domain()[1].toFixed(3))+"]";
-    else if(yDim == key)
-      content += "\n"+yDim+": ["+(+yScale.domain()[0].toFixed(3))+", "\
-                                +(+yScale.domain()[1].toFixed(3))+"]";
-    else
-      content += "\n"+key+": ["+d3.min(multiarr[v].map(Number))+", "+d3.max(multiarr[v].map(Number))+"]";
+    var key = window.bio.vars[v]
+    // (+some_number) is a trick how to get rid of trailling zeroes
+    if(key == xDim)
+      infoPanel_lines[v+2] = [key,": [",zoomObject.rescaleX(xScale).domain()[0].toFixed(3),
+                                   ", ",zoomObject.rescaleX(xScale).domain()[1].toFixed(3),"]"].join("")
+    else if(key == yDim)
+      infoPanel_lines[v+2] = [key,": [",zoomObject.rescaleY(yScale).domain()[0].toFixed(3),
+                                   ", ",zoomObject.rescaleY(yScale).domain()[1].toFixed(3),"]"].join("")
   }
-  div.value = content;
+  d3.select("#infoPanel").property("innerHTML", infoPanel_lines.join("\n"))
 }
 function handleMouseOut(d, i) {
   d3.select(this).attr("stroke-width", normalStrokeWidth);
@@ -1440,7 +1558,10 @@ function handleMouseClick(d, i) {
   d3.selectAll(".states")
     .filter(x => {return reachable.includes(Number(x.id.slice(1))) })
     .attr("fill", reachColor_TS);
-  if(d !== null) fill_info_panel(d);
+  if(d !== null) {
+    infoPanel_lines[0] = "Reach from: "+d.id.slice(1)
+    fill_info_panel(d)
+  }
 }
 
 function draw() {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE visualization SYSTEM "../../visualization.dtd">
-<visualization name="Ace editor">
+<visualization name="Text editor">
     <data_sources>
         <data_source>
             <model_class>HistoryDatasetAssociation</model_class>
@@ -11,6 +11,6 @@
     <params>
         <param type="dataset" var_name_in_template="hda" required="true">dataset_id</param>
     </params>
-    <!--entry_point entry_point_type="mako">ace_editor.mako</entry_point-->
-    <template>ace_editor.mako</template>
+    <entry_point entry_point_type="mako">ace_editor.mako</entry_point>
+    <!--template>ace_editor.mako</template-->
 </visualization>

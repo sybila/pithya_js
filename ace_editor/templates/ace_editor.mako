@@ -8,6 +8,7 @@ path = os.getcwd()
 %>
 <%
 data = "\n".join(list(hda.datatype.dataprovider( hda, 'line', comment_char=none, provide_blank=True, strip_lines=False, strip_newlines=True )))
+#print data
 %>
 <html lan"en">
   <head>
@@ -31,9 +32,25 @@ data = "\n".join(list(hda.datatype.dataprovider( hda, 'line', comment_char=none,
         }
         .button {
             background-color: #4CAF50; /* Green */
+
+            border-color: #000;
+            border-radius: 3px;
+            border-style: solid;
+            border-width: 1px;
+            box-sizing: border-box;
+            color: white;
+            border: none;
+            font-size: 12px;
+            font-weight: 400;
+            font-family: sans-serif;
+            cursor: pointer;
+
             position: absolute;
             top: 2px;
             height: 36px;
+        }
+        .button:hover {
+            background-color: #2c4330; /* #2c3143; */
         }
         #save_btn {
             left: 2px;
@@ -48,11 +65,11 @@ data = "\n".join(list(hda.datatype.dataprovider( hda, 'line', comment_char=none,
             left: 236px;
         }
     </style>
-    <script type="application/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+    <script type="application/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
 	
   </head>
 
-  <body>
+  <body  type="text/plain" charset="utf-8">
   	<script type="text/javascript" charset="utf-8">
         var hist_id = null;
       
@@ -80,7 +97,7 @@ data = "\n".join(list(hda.datatype.dataprovider( hda, 'line', comment_char=none,
                 formData.append('tool_id', 'upload1');
                 formData.append('history_id', hist_id);
                 formData.append('inputs', JSON.stringify(dInputs));
-                formData.append('files_0|file_data', new Blob([cont], {type: 'text/plain'}), $('#editor').attr('file-name'));
+                formData.append('files_0|file_data', new Blob([cont], {type: 'text/plain'}), 'Text edit on data '+$('#editor').attr('file-hid') );
           
                 $.ajax({
                     url: '${prefix}/api/tools',
@@ -96,13 +113,13 @@ data = "\n".join(list(hda.datatype.dataprovider( hda, 'line', comment_char=none,
                 });
             });
         });
-  	</script>
+	</script>
 
     <input class="button" type="button" id="save_btn" value="Save modifications" />
-	  <input class="button" type="button" id="undo_btn" value="Undo" />
+    <input class="button" type="button" id="undo_btn" value="Undo" />
     <input class="button" type="button" id="redo_btn" value="Redo" />
     <input class="button" type="button" id="wrap_btn" value="Word wrap" />
-    <div id="editor" file-name=${hda.name}>${data}</div>
+    <div id="editor" file-name=${hda.name} file-hid=${hda.hid} >${data|x}</div>
 	
     <script src="static/ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
     <script>
@@ -110,6 +127,7 @@ data = "\n".join(list(hda.datatype.dataprovider( hda, 'line', comment_char=none,
     		editor.setTheme("ace/theme/twilight");
     		editor.getSession().setMode("ace/mode/python");
     		editor.getSession().setTabSize(4);
+                editor.setShowPrintMargin(false);
     		editor.setHighlightActiveLine(true);
     		editor.resize();
     </script>
