@@ -157,7 +157,8 @@
   <head>
     <title>Parameter Space</title>
   	<script src="https://d3js.org/d3.v4.js" charset="utf-8"></script>
-    <script src="static/mathjs-4.4.2/dist/math.min.js"></script>
+  	<script src="https://unpkg.com/mathjs@5.3.1/dist/math.min.js" />
+    <!-- script src="static/mathjs-4.4.2/dist/math.min.js"></script -->
   	<script type="text/javascript" charset="utf-8">
       // definition of functions used in bio files so there is no need to transorm them 
       function Hillm(x,t,n,b,a) {
