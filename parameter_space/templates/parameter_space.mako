@@ -147,7 +147,9 @@
   type = str(results[u'type'])
   states = {k[u'id']: k[u'bounds'] for k in results[u'states'] }
   params_val = [ k.encode('utf-8') for k in results[u'parameter_values'] ] if results['type'] == 'smt' else results['parameter_values']
-  results = {str(k[u'formula']): k[u'data'] for k in results[u'results'] }
+  ## next line of code will transform results: vector of lists with formula string and data vector of pairs of state and parameterisation indices
+  ## into list (indexed by formula string) of data vector of the same pairs but this time state index is actual id of state and not the position of state in the states vector
+  results = {str(k[u'formula']): [ [results[u'states'][r[0]][u'id'],r[1]] for r in k[u'data']] for k in results[u'results'] }
   
 %>
 <html lan"en">
@@ -374,10 +376,10 @@
               						</div>
                         </div>
                     </div>
-                    <div class="row">
+                    <div class="row nohide">
                       <div class="col-sm-4">  <button class="btn btn-default" id="resetReachBtn_PS">Deselect</button> </div>
-                      <div class="col-sm-6">  <button class="btn btn-default" id="resetReachOneBtn_PS">Deselect last</button> </div>
-                      <div class="col-sm-2">
+                      <div class="col-sm-4" hidden>  <button class="btn btn-default" id="resetReachOneBtn_PS">Deselect last</button> </div>
+                      <div class="col-sm-4">
                         <label class="control-label" for="checkbox_PS_mode" id="text_PS_mode">Include</label>
                         <input type="checkbox" value="mode" class="cb" id="checkbox_PS_mode" checked>
                       </div>
@@ -435,6 +437,7 @@
                       </div>
                     </div>
                 % endfor
+                
                 % for val in vars:
                   <% 
                   min_val  = min(map(float,thrs[val]))
@@ -1634,6 +1637,7 @@ function redrawClickedPoints() {
     
 }
 function redrawClickedStates() {
+    //TODO: not working properly for dep params
     clicked_states_PS = clicked_points_PS.length == 0 ? [] : Object.keys(map_PS).slice()
     const state_ids = Object.keys(map_PS).length > 0 ? Object.keys(map_PS) : []
     const param_ids = Object.values(map_PS).length > 0 ? Object.values(map_PS) : []
@@ -1698,54 +1702,15 @@ function handleMouseClick_PS(dat, ind) {
   window.bio.vars.forEach( (d,i) => data[d] = var_bounds_PS[i] );
   data[xDimPS] = mouse[0]
   data[yDimPS] = mouse[1]
-/*   
-  var sinds = []
-  clicked_points_PS.push([data, inclusion])
-  if(clicked_states_PS.length == 0 && clicked_points_PS.length == 1) clicked_states_PS = Object.keys(map_PS).slice()
- 
-  if(window.result.type == 'smt') {
-    var valid_states = new Set()
-    if (Object.values(map_PS).length > 0) {
-      state_ids = Object.keys(map_PS)
-      param_ids = Object.values(map_PS)
-      data['TRUE'] = true
-      data['FALSE'] = false
-
-      for(var p=0, len=param_ids.length; p<len; ++p) {
-        const sid = state_ids[p]
-        const pid = param_ids[p]
-        
-        if(!valid_states.has(sid) && math.eval(window.result.params[pid], data)) {
-          valid_states.add(sid)
-        }
-      }
-    }
-    sinds = [... valid_states]
-  } else {
-    if(d3.select(this).attr("class") == "interval") {
-      // we assume all shown and hidden param intervals according to settings by slider values and selected formula
-      var sel = d3.selectAll(".interval")
-        .filter((d) => {
-          var result = false
-          for(var i=0, len=d.data.length; i<len; ++i) {
-            const r = d.data[i]
-            if(window.result.type == 'rectangular' && mouse[0] > Number(r.x[0]) && mouse[0] < Number(r.x[1]) && mouse[1] > Number(r.y[0]) && mouse[1] < Number(r.y[1])) {
-              result = true
-              map_SS[d.id.replace(/[0-9]+x/,"")].forEach(x => {if(!sinds.includes(""+x)) sinds.push(""+x)} )
-              break
-            }
-          }
-          return !result
-        })
-    }
-  } */  
+  
   if(window.result.type != 'smt' || d3.select(this).attr("class") == "interval") {  //only for independent parameters it is allowed to click anywhere in PS
     var sinds = new Set()
     clicked_points_PS.push([data, inclusion])
     if(clicked_states_PS.length == 0 && clicked_points_PS.length == 1) clicked_states_PS = Object.keys(map_PS).slice()
     
+    var selection = null
     if(d3.select(this).attr("class") == "interval") {
-      var sel = d3.selectAll(".interval")
+      selection = d3.selectAll(".interval")
         .filter(d => {
           var result = false
           if(window.result.type == 'smt') {
@@ -1758,7 +1723,10 @@ function handleMouseClick_PS(dat, ind) {
                       cy  = Number(zoomObject_PS.rescaleY(yScalePS)(d.data[0][yDimPS])); //Y coordinate for center of this cylinder in svg coordinates
                 if( m[0] >= cx0 && m[0] <= cx1 && m[1] <= cy-r && m[1] >= cy+r ) {
                   result = true
-                  // TODO: here has to be filtering of states for particular cylinder
+                  map_CTX[parseFloat(d.id)]['state_ids'].forEach(x => {
+                    //we need to filter relevant states such that the mouse-click is within their bounds for this particular dimension (in model coordinates)
+                    if(mouse[0] >= window.result.states[x][xDimPS_id][0] && mouse[0] <= window.result.states[x][xDimPS_id][1]) sinds.add(""+x)
+                  })
                 }
               } else {
                 const cx = Number(zoomObject_PS.rescaleX(xScalePS)(d.data[0][xDimPS])), //X coordinate for center of this cylinder in svg coordinates
@@ -1766,7 +1734,10 @@ function handleMouseClick_PS(dat, ind) {
                       cy0 = Number(zoomObject_PS.rescaleY(yScalePS)(d.data[0][yDimPS][0])); //Y coordinate for start of this cylinder in svg coordinates
                 if( m[0] >= cx-r && m[0] <= cx+r && m[1] <= cy0 && m[1] >= cy1 ) {
                   result = true
-                  // TODO: here has to be filtering of states for particular cylinder
+                  map_CTX[parseFloat(d.id)]['state_ids'].forEach(x => {
+                    //we need to filter relevant states such that the mouse-click is within their bounds for this particular dimension (in model coordinates)
+                    if(mouse[1] >= window.result.states[x][yDimPS_id][0] && mouse[1] <= window.result.states[x][yDimPS_id][1]) sinds.add(""+x)
+                  })
                 }
               }
             } else {
@@ -1774,7 +1745,7 @@ function handleMouseClick_PS(dat, ind) {
                     cy = Number(zoomObject_PS.rescaleY(yScalePS)(d.data[0][yDimPS])); //Y coordinate for center of this point in svg coordinates
               if( (m[0]-cx)*(m[0]-cx) + (m[1]-cy)*(m[1]-cy) <= r*r ) {
                 result = true
-                map_CTX[d.id]['state_ids'].forEach(x => sinds.add(""+x) )
+                map_CTX[d.id]['state_ids'].forEach(x => sinds.add(""+x) ) //simply add all states affiliated with selected parametrisation point according to map_CTX
               }
             }
           } else if(window.result.type == 'rectangular') {
@@ -1789,13 +1760,12 @@ function handleMouseClick_PS(dat, ind) {
           }
           return result
         })
-      if(window.result.type == 'smt')
-        sel.attr('fill', inclusion ? positive_col : negative_col )
     }
     clicked_states_PS = clicked_states_PS.filter(x => inclusion && sinds.has(x) || !inclusion && !sinds.has(x) )
     containerSS.selectAll(".states").attr("stroke-width", d => d.positive.filter(id => clicked_states_PS.includes(""+id)).length > 0 ? hoverStrokeWidth : normalStrokeWidth )
     
     if(window.result.type != 'smt')
+      //in case of indep params cross will be drawn
       containerPS.append("path")
         .datum([data,inclusion])
         .attr("class", "marker")
@@ -1803,21 +1773,31 @@ function handleMouseClick_PS(dat, ind) {
         .attr("stroke-width", markerWidth)
         .attr("marker-end", d => (d[1] ? "url(#greenCross)" : "url(#redCross)") )
         .attr("d", d => "M"+zoomObject_PS.rescaleX(xScalePS)(d[0][xDimPS])+","+ zoomObject_PS.rescaleY(yScalePS)(d[0][yDimPS])+" l0,0")
+    else
+      //in case of dep params selected parameterisation(s) will get new color
+      selection.attr('fill', inclusion ? positive_col : negative_col )
   }
 }
 function resettedClick_PS() {
   clicked_states_PS = []
+  // all states are set to have normal stroke (as unselected)
   containerSS.selectAll(".states").attr("stroke-width", normalStrokeWidth)
+  
   clicked_points_PS = []
   if(window.result.type == 'smt')
+    //in case of dep params all parameterisations are set to have default color
     containerPS.selectAll('.interval').attr('fill', reachColor)
-  containerPS.selectAll(".marker").remove()
+  else
+    //in case of indep params all crosses are deleted
+    containerPS.selectAll(".marker").remove()
 }
 function reverseLastClick_PS() {
   if(clicked_points_PS.length > 0) {
     clicked_points_PS = clicked_points_PS.slice(0, clicked_points_PS.length-1)
     redrawClickedStates()
-    containerPS.selectAll(".marker").filter((d,i,nodes) => i == nodes.length-1).remove()
+    if(window.result.type != 'smt')
+      //in case of indep params last cross is deleted
+      containerPS.selectAll(".marker").filter((d,i,nodes) => i == nodes.length-1).remove()
   }
 }
 function changeRadius_PS() {
