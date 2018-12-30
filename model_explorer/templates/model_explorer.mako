@@ -119,10 +119,18 @@
       rp = Rp = rm = Rm = Ramp;
 
       function Hp(x,x1,y1,y2) {
+        if(y1 > y2) {temp = y1; y1 = y2; y2 = temp;};
         if(x <= x1) return(y1);
         else        return(y2);
       };
       hp = Hp;
+
+      function Hm(x,x1,y1,y2) {
+        if(y1 < y2) {temp = y1; y1 = y2; y2 = temp;};
+        if(x <= x1) return(y2);
+        else        return(y1);
+      };
+      hm = Hm;
 
       function Monod(x,t,y) {
         return(x/(y*(x+t)));
