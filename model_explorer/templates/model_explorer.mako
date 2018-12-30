@@ -41,17 +41,21 @@
     
   ## all lines joined into one structured string (keeping all newlines)
   data_text = "\\n".join(data)
+  print(data_text)
   
   ## path to Approximation tool written in Java
-  approx_path = '/home/shiny/pithya-gui/core/bin/pithyaApproximation'
+  approx_path = '/home/ubuntu/pithya-core/build/install/pithya/bin/pithyaApproximation'
+
   ## unique name of resulting output file (should be unique for every file from personal history)
   output_data = '/tmp/'+hda.name+".hid_"+str(hda.id)+".id_"+str(hda.hid)+".approx.bio"
+
   ## if this input were approximated before and the output is still in tmp the approximation will be skipped
   if not os.path.isfile(output_data):
     print("## Approximation needed !!!")
     cmd = "echo '{}' | {} > '{}'".format(data_text,approx_path,output_data)
     os.system( cmd )
   with open(output_data) as f: approx_data = [line.rstrip('\n') for line in f]
+  print(approx_data)
     
   ## parssing of bio file format to python structures (later used in JS)
   vars =   [k for k in approx_data if re.match('^VARS:',k)]
@@ -88,10 +92,12 @@
         return a+(b-a)*(Math.pow(t,n)/(Math.pow(x,n)+Math.pow(t,n)));
       };
       hillm = Hillm;
+
       function Hillp(x,t,n,a,b) {
         return a+(b-a)*(Math.pow(x,n)/(Math.pow(x,n)+Math.pow(t,n)));
       };
       hillp = Hillp;
+
       function Approx(s,ramps) {
         if(s <= ramps[0][0]) return(ramps[0][1])
         if(s >= ramps[ramps.length-1][0]) return(ramps[ramps.length-1][1])
@@ -101,7 +107,67 @@
           if(s >= a[0] && s <= b[0]) 
             return((b[0]-a[0]) > 0 ? a[1]+(s-a[0])/(b[0]-a[0])*(b[1]-a[1]) : a[1])
         }
-      }
+      };
+
+      function Ramp(x,x1,x2,y1,y2) {
+        if(x <= x1) return(y1);
+        if(x >= x2) return(y2);
+        ratio <- (x-x1)/(x2-x1);
+        if(y1<=y2)  return(y1+Math.abs(y2-y1)*ratio);
+        else        return(y1-Math.abs(y2-y1)*ratio);
+      };
+      rp = Rp = rm = Rm = Ramp;
+
+      function Hp(x,x1,y1,y2) {
+        if(x <= x1) return(y1);
+        else        return(y2);
+      };
+      hp = Hp;
+
+      function Monod(x,t,y) {
+        return(x/(y*(x+t)));
+      };
+      monod = Monod;
+
+      function Moser(x,t,n) {
+        return (Math.pow(x,n)/(Math.pow(x,n)+t));
+      };
+      moser = Moser;
+
+      function Tessier(x,t) {
+        return (1 - Math.exp(-x/t));
+      };
+      tessier = Tessier;
+
+      function Haldane(x,t,k) {
+        return(x/(x+t+(Math.pow(x,2)/k)));
+      };
+      haldane = Haldane;
+
+      function Aiba(x,t,k) {
+        return((x*Math.exp(-x/k))/(t+x));
+      };
+      aiba = Aiba;
+
+      function Tessier_type(x,t,k) {
+        return(Math.exp(-x/k)-Math.exp(-x/t));
+      };
+      tessier_type = Tessier_type;
+
+      function Andrews(x,t,k) {
+        return(1/((1+t/x)*(1+x/k)));
+      };
+      andrews = Andrews;
+
+      function Sin(x) {
+        return(Math.sin(x));
+      };
+      sin = Sin;
+
+      function Pow(x,n) {
+        return(Math.pow(x,n));
+      };
+      pow = Pow;
       
       // dynamicly (in mako style) fills dictionary with equations parsed from bio file for using in JS code
       functions = {
