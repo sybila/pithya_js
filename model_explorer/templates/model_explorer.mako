@@ -306,11 +306,12 @@
 					    min_val  = float(val[1])
 					    max_val  = float(val[2])
 					    step_val = abs(max_val-min_val)*0.001
+					    start_val= abs(max_val+min_val)*0.5
 					    %>
 						<div class="form-group param_slider">
 							<label class="control-label" for="slider_${val[0]}">Parameter ${val[0]}</label>
-							<input class="js-range-slider" id="slider_${val[0]}" data-min=${min_val} data-max=${max_val} data-from=${min_val} data-step=${step_val} 
-							  min=${min_val} max=${max_val} value=${min_val} step=${step_val} 
+							<input class="js-range-slider" id="slider_${val[0]}" data-min=${min_val} data-max=${max_val} data-from=${start_val} data-step=${step_val} 
+							  min=${min_val} max=${max_val} value=${start_val} step=${step_val} 
 							  data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-data-type="number" >
 						</div>
 					% endfor
@@ -359,8 +360,10 @@
             <div class="col-sm-2">
                 <div style="text-align: right;">
                     <div><button class="btn btn-default" id="resetZoomBtn_VF">Unzoom</button></div>
-                    <div><button class="btn btn-default" id="resetReachBtn_VF">Deselect</button> 
-                         <button class="btn btn-default" id="elongateReachBtn_VF">Elongate</button></div>
+                    <div><button class="btn btn-default" id="refineReachBtn_VF">Refine</button> 
+                         <button class="btn btn-default" id="coarsenReachBtn_VF">Coarsen</button> 
+                         <button class="btn btn-default" id="elongateReachBtn_VF">Elongate</button> 
+                         <button class="btn btn-default" id="resetReachBtn_VF">Deselect</button></div>
                 </div>
                 <pre id="infoPanel_VF"></pre>
                 % if len(vars) > 2:
@@ -452,7 +455,8 @@ var width = d3.select("#plot_vf").property("offsetWidth"),
     color_style = d3.select("#input_color_style").property("value");
 
 // initial values according to the sliders setting
-window.bio.params.map(x => params[x[0]] = x[1]);
+//window.bio.params.map(x => params[x[0]] = x[1]);
+window.bio.params.map(x => params[x[0]] = Number(d3.select("#slider_"+x[0]).property("value")) );
 
 // iteratively adds event listener for variable sliders (according to index)
 % if len(vars) > 2:
@@ -498,6 +502,25 @@ window.bio.params.map(x => params[x[0]] = x[1]);
     })(${val});
   % endfor
 % endif
+
+// sets the listener for button refining reachability flow modifier by ten
+d3.select('#refineReachBtn_VF').on("click", function() {
+  traj_dt_VF = 0.1*traj_dt_VF;
+  //zoomed_VF();
+  if(reach_start_VF !== null) {
+      d3.select("#trajectory_VF").remove();
+      reach_VF(null);
+  }
+});
+// sets the listener for button coarsening reachability flow modifier by ten
+d3.select('#coarsenReachBtn_VF').on("click", function() {
+  traj_dt_VF = 10*traj_dt_VF;
+  //zoomed_VF();
+  if(reach_start_VF !== null) {
+      d3.select("#trajectory_VF").remove();
+      reach_VF(null);
+  }
+});
 
 // sets text value for slider of arrows_count and adds event listener for change of slider
 d3.select('#input_gridSize_VF').on("input", function() {
