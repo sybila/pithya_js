@@ -44,7 +44,7 @@
   print(data_text)
   
   ## path to Approximation tool written in Java
-  approx_path = '/home/ubuntu/pithya-core/build/install/pithya/bin/pithyaApproximation'
+  approx_path = '/home/galaxy/pithya-core/build/install/pithya/bin/pithyaApproximation'
 
   ## unique name of resulting output file (should be unique for every file from personal history)
   output_data = '/tmp/'+hda.name+".hid_"+str(hda.id)+".id_"+str(hda.hid)+".approx.bio"
@@ -83,7 +83,8 @@
     <title>Model Explorer</title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <script src="http://d3js.org/d3.v4.min.js"></script>
+    <!--script src="http://d3js.org/d3.v4.min.js"></script-->
+    <script type="text/javascript" src="static/js/d3.v4.min.js"></script>
     <script type="text/javascript" src="static/js/d3-format/d3-format.min.js"></script>
     
     <script type="text/javascript" charset="utf-8">
@@ -737,25 +738,25 @@ function initiate_VF() {
       .attr("y", height-margin.bottom)
       .attr("width", width)
       .attr("height", margin.bottom)
-      .attr("fill", bgColor)
+      .attr("fill", noColor)
   svg_VF.append("rect")
       .attr("x", 0)
       .attr("y", 0)
       .attr("width", margin.left)
       .attr("height", height)
-      .attr("fill", bgColor)
+      .attr("fill", noColor)
   svg_VF.append("rect")
       .attr("x", 0)
       .attr("y", 0)
       .attr("width", width)
       .attr("height", margin.top)
-      .attr("fill", bgColor)
+      .attr("fill", noColor)
   svg_VF.append("rect")
       .attr("x", width-margin.right)
       .attr("y", 0)
       .attr("width", margin.right)
       .attr("height", height)
-      .attr("fill", bgColor)
+      .attr("fill", noColor)
           
   defs_VF = svg_VF.append("svg:defs");
   defs_VF.append("svg:marker")
@@ -914,25 +915,25 @@ function initiate_TSS() {
       .attr("y", height-margin.bottom)
       .attr("width", width)
       .attr("height", margin.bottom)
-      .attr("fill", bgColor)
+      .attr("fill", noColor)
   svg.append("rect")
       .attr("x", 0)
       .attr("y", 0)
       .attr("width", margin.left)
       .attr("height", height)
-      .attr("fill", bgColor)
+      .attr("fill", noColor)
   svg.append("rect")
       .attr("x", 0)
       .attr("y", 0)
       .attr("width", width)
       .attr("height", margin.top)
-      .attr("fill", bgColor)
+      .attr("fill", noColor)
   svg.append("rect")
       .attr("x", width-margin.right)
       .attr("y", 0)
       .attr("width", margin.right)
       .attr("height", height)
-      .attr("fill", bgColor)
+      .attr("fill", noColor)
   
   xLabel = svg.append("text")
       .attr("id", "xlabel")
